@@ -6,9 +6,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.nio.file.Files.newBufferedReader;
-import static java.nio.file.Files.newBufferedWriter;
-import static java.nio.file.Files.walkFileTree;
+import static java.nio.file.Files.*;
 
 public class RecursiveWalk {
     
@@ -49,7 +47,7 @@ public class RecursiveWalk {
                 System.err.println("Error with provided output file: " + e.getMessage());
             }
         } catch (IOException e) {
-            System.err.println("Error with provided input file: ");
+            System.err.println("Error with provided input file: " + e.getMessage());
         }
     }
     
