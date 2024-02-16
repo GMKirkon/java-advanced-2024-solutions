@@ -12,38 +12,40 @@ import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.Files.newInputStream;
 
 
-public class RecursiveWalker<T extends Path> extends SimpleFileVisitor<T> {
-    
+public class RecursiveVisitor extends SimpleFileVisitor<Path> {
     private final byte[] buff = new byte[4096];
-    private final WalkWriter writer;
     
-    public RecursiveWalker(WalkWriter out) {
-        writer = out;
+    protected final AbstractWalkWriterAndHasher walkHasher;
+    
+    public RecursiveVisitor(final AbstractWalkWriterAndHasher walkHasher) {
+        this.walkHasher = walkHasher;
     }
     
     @Override
-    public FileVisitResult visitFile(T file, BasicFileAttributes attrs) throws IOException {
-        int hash = 0;
+    public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+        byte[] hash;
         try (
                 final InputStream in = new BufferedInputStream(newInputStream(file))
         ) {
             int read = 0;
+            walkHasher.reset();
             while ((read = in.read(buff)) != -1) {
-                hash = FileHasher.hash(hash, buff, read);
+                walkHasher.hash(buff, read);
             }
-            hash = FileHasher.hash(hash, buff, 0);
-            
+            hash = walkHasher.getHash();
         } catch (final IOException e) {
             System.err.println("Started processing file, but could not finish" + file + " : " + e.getMessage());
-            hash = 0;
+            walkHasher.writeZeroHash(file.toString());
+            return CONTINUE;
         }
-        writer.writeHash(hash, file);
+        
+        walkHasher.writeHash(hash, file.toString());
         return CONTINUE;
     }
     
     @Override
-    public FileVisitResult visitFileFailed(T file, IOException exc) throws IOException {
-        System.err.println("Could not process file " + file + " : " + exc.getMessage());
+    public FileVisitResult visitFileFailed(final Path file, final IOException exc) throws IOException {
+        walkHasher.writeZeroHash(file.toString());
         return CONTINUE;
     }
 }
