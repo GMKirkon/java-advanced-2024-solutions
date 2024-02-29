@@ -7,7 +7,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 
 public class NonRecursiveVisitor extends RecursiveVisitor {
     
-    public NonRecursiveVisitor(final AbstractWalkWriterAndHasher writer) {
+    public NonRecursiveVisitor(final AbstractWriterAndHasher writer) {
         super(writer);
     }
     

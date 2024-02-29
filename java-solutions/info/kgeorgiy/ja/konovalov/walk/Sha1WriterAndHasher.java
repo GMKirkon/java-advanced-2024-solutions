@@ -4,13 +4,23 @@ import java.io.Writer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public class Sha1WalkWriterAndHasher extends AbstractWalkWriterAndHasher {
+public class Sha1WriterAndHasher extends AbstractWriterAndHasher {
     
     final MessageDigest messageDigest;
     
-    public Sha1WalkWriterAndHasher(Writer writer) throws NoSuchAlgorithmException {
+    public Sha1WriterAndHasher(Writer writer) {
         super(writer);
-        messageDigest = MessageDigest.getInstance("SHA-1");
+        try {
+            messageDigest = MessageDigest.getInstance("SHA-1");
+        } catch (NoSuchAlgorithmException e) {
+            throw new AssertionError(String.format("Suddenly SHA-1 is not implemented by Java: %s", e.getMessage()));
+        }
+        
+    }
+    
+    @Override
+    public int getHashLength() {
+        return messageDigest.getDigestLength() * 2;
     }
     
     @Override
@@ -26,12 +36,6 @@ public class Sha1WalkWriterAndHasher extends AbstractWalkWriterAndHasher {
     @Override
     public void reset() {
         messageDigest.reset();
-    }
-    
-    
-    @Override
-    public void writeZeroHash(String file) throws java.io.IOException {
-        super.writer.write(String.format("%040x ", 0) + file + System.lineSeparator());
     }
 }
 

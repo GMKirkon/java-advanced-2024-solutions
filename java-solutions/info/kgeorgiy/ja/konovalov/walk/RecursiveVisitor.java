@@ -15,31 +15,25 @@ import static java.nio.file.Files.newInputStream;
 public class RecursiveVisitor extends SimpleFileVisitor<Path> {
     private final byte[] buff = new byte[4096];
     
-    protected final AbstractWalkWriterAndHasher walkHasher;
+    protected final AbstractWriterAndHasher walkHasher;
     
-    public RecursiveVisitor(final AbstractWalkWriterAndHasher walkHasher) {
+    public RecursiveVisitor(final AbstractWriterAndHasher walkHasher) {
         this.walkHasher = walkHasher;
     }
     
     @Override
     public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
-        byte[] hash;
-        try (
-                final InputStream in = new BufferedInputStream(newInputStream(file))
-        ) {
-            int read = 0;
+        try (final InputStream in = new BufferedInputStream(newInputStream(file))) {
+            int read;
             walkHasher.reset();
             while ((read = in.read(buff)) != -1) {
                 walkHasher.hash(buff, read);
             }
-            hash = walkHasher.getHash();
+            walkHasher.writeHash(walkHasher.getHash(), file.toString());
         } catch (final IOException e) {
-            System.err.println("Started processing file, but could not finish" + file + " : " + e.getMessage());
+            System.err.printf("Started processing file, but could not finish %s : %s", file, e.getMessage());
             walkHasher.writeZeroHash(file.toString());
-            return CONTINUE;
         }
-        
-        walkHasher.writeHash(hash, file.toString());
         return CONTINUE;
     }
     

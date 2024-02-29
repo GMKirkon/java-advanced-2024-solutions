@@ -3,10 +3,10 @@ package info.kgeorgiy.ja.konovalov.walk;
 import java.io.IOException;
 import java.io.Writer;
 
-public class JenkingWalkWriterAndHasher extends AbstractWalkWriterAndHasher {
+public class JenkingWriterAndHasher extends AbstractWriterAndHasher {
     
     
-    public JenkingWalkWriterAndHasher(Writer out) {
+    public JenkingWriterAndHasher(Writer out) {
         super(out);
     }
     
@@ -22,10 +22,6 @@ public class JenkingWalkWriterAndHasher extends AbstractWalkWriterAndHasher {
     
     @Override
     public void hash(final byte[] data, final int len) {
-        if (data == null) {
-            return;
-        }
-        
         for (int i = 0; i < len; i++) {
             byte currentByte = data[i];
             
@@ -41,7 +37,7 @@ public class JenkingWalkWriterAndHasher extends AbstractWalkWriterAndHasher {
     }
     
     @Override
-    public void writeZeroHash(String file) throws IOException {
-        super.writer.write(String.format("%08x ", 0) + file + System.lineSeparator());
+    public int getHashLength() {
+        return 8;
     }
 }
