@@ -76,12 +76,12 @@ public class WalkLauncher {
                             Files.walkFileTree(Path.of(root), walker);
                         } catch (final InvalidPathException e) {
                             writer.writeHash(hasher.getErrorHash(), root);
-                        } catch (ImpossibleToOutputResult e) {
-                            System.err.println("Error with provided output file during writing: " + e.getMessage());
-                        } catch (ImpossibleToProcessFileException e) {
-                            System.err.println("Error with provided file during hashing: " + e.getMessage());
                         }
                     }
+                } catch (ImpossibleToOutputResult e) {
+                    System.err.println("Error with provided output file during writing: " + e.getMessage());
+                } catch (ImpossibleToProcessFileException e) {
+                    System.err.println("Error with provided file during hashing: " + e.getMessage());
                 } catch (final ImpossibleToOpenFile e) {
                     System.err.println("Error with provided input file during reading: " + e.getMessage());
                 }
