@@ -75,13 +75,20 @@ public class WalkLauncher {
                 final HashWriter writer = new HashWriter(out);
                 final FileVisitor<Path> walker = modificationType.createWalker(writer, hasher);
                 String root;
-                
-                while ((root = in.readLine()) != null) {
-                    try {
-                        walkFileTree(Path.of(root), walker);
-                    } catch (InvalidPathException e) {
-                        writer.writeHash(hasher.getErrorHash(), root);
+                try {
+                    while ((root = in.readLine()) != null) {
+                        try {
+                            walkFileTree(Path.of(root), walker);
+                        } catch (InvalidPathException e) {
+                            try {
+                                writer.writeHash(hasher.getErrorHash(), root);
+                            } catch (IOException exc) {
+                                System.err.println("Error with provided output file during writing: " + exc.getMessage());
+                            }
+                        }
                     }
+                } catch (IOException e) {
+                    System.err.println("Error with provided input file during reading: " + e.getMessage());
                 }
             } catch (IOException e) {
                 System.err.println("Error with provided output file: " + e.getMessage());
