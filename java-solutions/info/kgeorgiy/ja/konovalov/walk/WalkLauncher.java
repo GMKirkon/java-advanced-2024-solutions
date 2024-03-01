@@ -78,6 +78,8 @@ public class WalkLauncher {
                             writer.writeHash(hasher.getErrorHash(), root);
                         } catch (ImpossibleToOutputResult e) {
                             System.err.println("Error with provided output file during writing: " + e.getMessage());
+                        } catch (ImpossibleToProcessFileException e) {
+                            System.err.println("Error with provided file during hashing: " + e.getMessage());
                         }
                     }
                 } catch (final ImpossibleToOpenFile e) {
