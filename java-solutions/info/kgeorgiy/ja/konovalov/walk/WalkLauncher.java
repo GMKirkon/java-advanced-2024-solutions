@@ -79,11 +79,11 @@ public class WalkLauncher {
                         }
                     }
                 } catch (ImpossibleToOutputResult e) {
-                    System.err.println("Error with provided output file during writing: " + e.getMessage());
+                    System.err.println(e.getMessage());
                 } catch (ImpossibleToProcessFileException e) {
-                    System.err.println("Error with provided file during hashing: " + e.getMessage());
+                    System.err.println(e.getMessage());
                 } catch (final ImpossibleToOpenFile e) {
-                    System.err.println("Error with provided input file during reading: " + e.getMessage());
+                    System.err.println(e.getMessage());
                 }
             } catch (final IOException e) {
                 System.err.println("Error with provided output file during opening: " + e.getMessage());
