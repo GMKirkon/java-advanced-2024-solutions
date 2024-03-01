@@ -7,13 +7,13 @@ import java.nio.file.attribute.BasicFileAttributes;
 
 public class NonRecursiveVisitor extends RecursiveVisitor {
     
-    public NonRecursiveVisitor(final AbstractWriterAndHasher writer) {
-        super(writer);
+    public NonRecursiveVisitor(final HashWriter writer, Hasher hasher) {
+        super(writer, hasher);
     }
     
     @Override
     public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
-        super.walkHasher.writeZeroHash(dir.toString());
+        super.writeZeroHash(dir);
         return FileVisitResult.SKIP_SUBTREE;
     }
 }

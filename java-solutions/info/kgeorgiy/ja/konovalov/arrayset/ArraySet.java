@@ -47,10 +47,11 @@ public class ArraySet<E> extends AbstractSet<E> implements NavigableSet<E> {
     }
     
     //ah, old good semantics by naming... One day I hope there will be templates, not generics.
-    private ArraySet(List<E> unmodifiableList, Comparator<? super E> comparator)
-    /* requires(is_unmodifiable_v<decltype(unmodifiableList)>) */ {
+    private ArraySet(List<E> unmodifiableOrderedList, Comparator<? super E> comparator)
+    /* requires(is_unmodifiable_v<decltype(unmodifiableList)>
+    // ok that's unreal && is_ordered_v<decltype(unmodifiableOrderedList)>) */ {
         cmp = comparator;
-        list = unmodifiableList;
+        list = unmodifiableOrderedList;
     }
     
     public ArraySet(ArraySet<E> other) {

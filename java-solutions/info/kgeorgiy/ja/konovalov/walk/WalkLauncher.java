@@ -5,12 +5,29 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.util.EnumMap;
 import java.util.Map;
 
 import static java.nio.charset.Charset.defaultCharset;
 import static java.nio.file.Files.*;
 
 public class WalkLauncher {
+    
+    private static final Map<Integer, String> possibleInputs = Map.of(
+            0,
+            "input",
+            1,
+            "output",
+            2,
+            "hashing type"
+    );
+    private final static java.util.EnumMap<HashingType, Hasher> possibleHashers;
+    
+    static {
+        possibleHashers = new EnumMap<>(HashingType.class);
+        possibleHashers.put(HashingType.JENKINS, new JenkinsHasher());
+        possibleHashers.put(HashingType.SHA_1, new Sha1Hasher());
+    }
     
     public static void launch(WalkModifications modificationType, final String... args) {
         if (args == null || args.length < 2 || args.length > 3) {
@@ -57,15 +74,16 @@ public class WalkLauncher {
         
         try (final var in = newBufferedReader(inputFile, defaultCharset())) {
             try (final var out = newBufferedWriter(outputFile, defaultCharset())) {
-                final AbstractWriterAndHasher hasherAndWalker = hashingType.makeHasher(out);
-                final FileVisitor<Path> walker = modificationType.createWalker(hasherAndWalker);
+                final Hasher hasher = possibleHashers.get(hashingType);
+                final HashWriter writer = new HashWriter(out);
+                final FileVisitor<Path> walker = modificationType.createWalker(writer, hasher);
                 String root;
                 
                 while ((root = in.readLine()) != null) {
                     try {
                         walkFileTree(Path.of(root), walker);
                     } catch (InvalidPathException e) {
-                        hasherAndWalker.writeZeroHash(root);
+                        writer.writeHash(hasher.getErrorHash(), root);
                     }
                 }
             } catch (IOException e) {
@@ -75,15 +93,6 @@ public class WalkLauncher {
             System.err.println("Error with provided input file: " + e.getMessage());
         }
     }
-    
-    private static final Map<Integer, String> possibleInputs = Map.of(
-            0,
-            "input",
-            1,
-            "output",
-            2,
-            "hashing type"
-    );
     
     private static void printUsagePattern() {
         System.err.println("Expected number of arguments from 2 to 3");

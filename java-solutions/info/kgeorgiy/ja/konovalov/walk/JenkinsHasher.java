@@ -1,15 +1,6 @@
 package info.kgeorgiy.ja.konovalov.walk;
 
-import java.io.IOException;
-import java.io.Writer;
-
-public class JenkingWriterAndHasher extends AbstractWriterAndHasher {
-    
-    
-    public JenkingWriterAndHasher(Writer out) {
-        super(out);
-    }
-    
+public class JenkinsHasher implements Hasher {
     int hash = 0;
     final String ERROR_HASH = "0".repeat(8);
     

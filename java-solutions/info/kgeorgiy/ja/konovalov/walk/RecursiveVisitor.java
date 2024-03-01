@@ -15,31 +15,38 @@ import static java.nio.file.Files.newInputStream;
 public class RecursiveVisitor extends SimpleFileVisitor<Path> {
     private final byte[] buff = new byte[4096];
     
-    protected final AbstractWriterAndHasher walkHasher;
+    protected final HashWriter writer;
+    protected final Hasher hasher;
     
-    public RecursiveVisitor(final AbstractWriterAndHasher walkHasher) {
-        this.walkHasher = walkHasher;
+    public RecursiveVisitor(final HashWriter writer, Hasher hasher) {
+        this.writer = writer;
+        this.hasher = hasher;
     }
+    
     
     @Override
     public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
         try (final InputStream in = new BufferedInputStream(newInputStream(file))) {
             int read;
-            walkHasher.reset();
+            hasher.reset();
             while ((read = in.read(buff)) != -1) {
-                walkHasher.hash(buff, read);
+                hasher.hash(buff, read);
             }
-            walkHasher.writeHash(walkHasher.getHash(), file.toString());
+            writer.writeHash(hasher.getHash(), file.toString());
         } catch (final IOException e) {
             System.err.printf("Started processing file, but could not finish %s : %s", file, e.getMessage());
-            walkHasher.writeZeroHash(file.toString());
+            writeZeroHash(file);
         }
         return CONTINUE;
     }
     
     @Override
     public FileVisitResult visitFileFailed(final Path file, final IOException exc) throws IOException {
-        walkHasher.writeZeroHash(file.toString());
+        writeZeroHash(file);
         return CONTINUE;
+    }
+    
+    public void writeZeroHash(final Path file) throws IOException {
+        writer.writeHash(hasher.getErrorHash(), file.toString());
     }
 }

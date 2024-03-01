@@ -1,25 +1,18 @@
 package info.kgeorgiy.ja.konovalov.walk;
 
-import java.security.MessageDigest;
-
-public class Sha1WriterAndHasher extends info.kgeorgiy.ja.konovalov.walk.AbstractWriterAndHasher {
-    
-    final MessageDigest messageDigest;
+public class Sha1Hasher implements Hasher {
+    final java.security.MessageDigest messageDigest;
     
     final String ERROR_HASH;
     
     {
         try {
-            messageDigest = MessageDigest.getInstance("SHA-1");
+            messageDigest = java.security.MessageDigest.getInstance("SHA-1");
             // multiply by 2 because messageDigest return number of bytes
             ERROR_HASH = "0".repeat(messageDigest.getDigestLength() * 2);
         } catch (java.security.NoSuchAlgorithmException e) {
             throw new AssertionError(String.format("Suddenly SHA-1 is not implemented by Java: %s", e.getMessage()));
         }
-    }
-    
-    public Sha1WriterAndHasher(java.io.Writer writer) {
-        super(writer);
     }
     
     @Override
@@ -42,5 +35,3 @@ public class Sha1WriterAndHasher extends info.kgeorgiy.ja.konovalov.walk.Abstrac
         messageDigest.reset();
     }
 }
-
-
