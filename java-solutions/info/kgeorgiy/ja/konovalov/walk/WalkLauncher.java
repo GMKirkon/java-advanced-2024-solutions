@@ -21,13 +21,10 @@ public class WalkLauncher {
             2,
             "hashing type"
     );
-    private final static java.util.EnumMap<HashingType, Hasher> possibleHashers;
-    
-    static {
-        possibleHashers = new EnumMap<>(HashingType.class);
-        possibleHashers.put(HashingType.JENKINS, new JenkinsHasher());
-        possibleHashers.put(HashingType.SHA_1, new Sha1Hasher());
-    }
+    private final static EnumMap<HashingType, Hasher> possibleHashers = new EnumMap<>(Map.of(
+            HashingType.JENKINS, new JenkinsHasher(),
+            HashingType.SHA_1, new Sha1Hasher()
+    ));
     
     public static void launch(WalkModifications modificationType, final String... args) {
         if (args == null || args.length < 2 || args.length > 3) {
