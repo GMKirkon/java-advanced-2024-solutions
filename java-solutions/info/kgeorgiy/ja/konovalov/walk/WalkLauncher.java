@@ -1,6 +1,7 @@
 package info.kgeorgiy.ja.konovalov.walk;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -64,13 +65,13 @@ public class WalkLauncher {
         if (parent != null) {
             try {
                 Files.createDirectories(parent);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 System.err.println("could not create directories for outputFile path");
             }
         }
         
-        try (final var in = newBufferedReader(inputFile, defaultCharset())) {
-            try (final var out = newBufferedWriter(outputFile, defaultCharset())) {
+        try (final var in = newBufferedReader(inputFile, StandardCharsets.UTF_8)) {
+            try (final var out = newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
                 final Hasher hasher = possibleHashers.get(hashingType);
                 final HashWriter writer = new HashWriter(out);
                 final FileVisitor<Path> walker = modificationType.createWalker(writer, hasher);
@@ -79,18 +80,18 @@ public class WalkLauncher {
                     while ((root = in.readLine()) != null) {
                         try {
                             walkFileTree(Path.of(root), walker);
-                        } catch (InvalidPathException e) {
+                        } catch (final InvalidPathException e) {
                             try {
                                 writer.writeHash(hasher.getErrorHash(), root);
-                            } catch (IOException exc) {
+                            } catch (final IOException exc) {
                                 System.err.println("Error with provided output file during writing: " + exc.getMessage());
                             }
                         }
                     }
-                } catch (IOException e) {
+                } catch (final IOException e) {
                     System.err.println("Error with provided input file during reading: " + e.getMessage());
                 }
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 System.err.println("Error with provided output file: " + e.getMessage());
             }
         } catch (final IOException e) {
@@ -108,7 +109,7 @@ public class WalkLauncher {
     static private Path parseFileNameToPath(String filename, String errorName) {
         try {
             return Path.of(filename);
-        } catch (InvalidPathException e) {
+        } catch (final InvalidPathException e) {
             System.err.printf("Provided %s file was not correct: %s%n", errorName, e.getMessage());
             return null;
         }
