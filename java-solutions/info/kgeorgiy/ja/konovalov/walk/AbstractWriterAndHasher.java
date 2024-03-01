@@ -18,10 +18,10 @@ public abstract class AbstractWriterAndHasher {
     }
     
     public void writeZeroHash(final String file) throws IOException {
-        writer.write(String.format("%s %s%n", "0".repeat(getHashLength()), file));
+        writer.write(String.format("%s %s%n", getErrorHash(), file));
     }
     
-    public abstract int getHashLength();
+    public abstract String getErrorHash();
     public abstract byte[] getHash();
     
     public abstract void hash(final byte[] data, final int len);

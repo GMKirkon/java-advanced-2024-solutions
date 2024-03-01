@@ -4,14 +4,14 @@ import java.util.*;
 
 import static java.lang.Integer.min;
 
-public class ArraySet<E> extends java.util.AbstractSet<E> implements NavigableSet<E> {
+public class ArraySet<E> extends AbstractSet<E> implements NavigableSet<E> {
     
     private final Comparator<? super E> cmp;
     private final List<E> list;
     
     public ArraySet() {
         cmp = null;
-        list = java.util.Collections.emptyList();
+        list = Collections.emptyList();
     }
     
     public ArraySet(Collection<? extends E> collection) {
@@ -43,7 +43,7 @@ public class ArraySet<E> extends java.util.AbstractSet<E> implements NavigableSe
     
     public ArraySet(Comparator<? super E> comparator) {
         cmp = comparator;
-        list = java.util.Collections.emptyList();
+        list = Collections.emptyList();
     }
     
     //ah, old good semantics by naming... One day I hope there will be templates, not generics.
@@ -78,7 +78,7 @@ public class ArraySet<E> extends java.util.AbstractSet<E> implements NavigableSe
     }
     
     private int getIndex(E e, int addIfInside, int addIfAbsent) {
-        var index = java.util.Collections.binarySearch(list, e, cmp);
+        var index = Collections.binarySearch(list, e, cmp);
         if (index >= 0) {
             index += addIfInside;
         } else {
@@ -140,7 +140,7 @@ public class ArraySet<E> extends java.util.AbstractSet<E> implements NavigableSe
     @Override
     public NavigableSet<E> subSet(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
         if (actualCompare(fromElement, toElement) == 1) {
-            throw new IllegalArgumentException("fromElement should be less than toElement");
+            throw new IllegalArgumentException("fromElement should be less or equal than toElement");
         }
         return unsafeSubSet(fromElement, fromInclusive, toElement, toInclusive);
     }

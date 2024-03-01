@@ -1,26 +1,30 @@
 package info.kgeorgiy.ja.konovalov.walk;
 
-import java.io.Writer;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
-public class Sha1WriterAndHasher extends AbstractWriterAndHasher {
+public class Sha1WriterAndHasher extends info.kgeorgiy.ja.konovalov.walk.AbstractWriterAndHasher {
     
     final MessageDigest messageDigest;
     
-    public Sha1WriterAndHasher(Writer writer) {
-        super(writer);
+    final String ERROR_HASH;
+    
+    {
         try {
             messageDigest = MessageDigest.getInstance("SHA-1");
-        } catch (NoSuchAlgorithmException e) {
+            // multiply by 2 because messageDigest return number of bytes
+            ERROR_HASH = "0".repeat(messageDigest.getDigestLength() * 2);
+        } catch (java.security.NoSuchAlgorithmException e) {
             throw new AssertionError(String.format("Suddenly SHA-1 is not implemented by Java: %s", e.getMessage()));
         }
-        
+    }
+    
+    public Sha1WriterAndHasher(java.io.Writer writer) {
+        super(writer);
     }
     
     @Override
-    public int getHashLength() {
-        return messageDigest.getDigestLength() * 2;
+    public String getErrorHash() {
+        return ERROR_HASH;
     }
     
     @Override

@@ -11,6 +11,7 @@ public class JenkingWriterAndHasher extends AbstractWriterAndHasher {
     }
     
     int hash = 0;
+    final String ERROR_HASH = "0".repeat(8);
     
     @Override
     public byte[] getHash() {
@@ -37,7 +38,7 @@ public class JenkingWriterAndHasher extends AbstractWriterAndHasher {
     }
     
     @Override
-    public int getHashLength() {
-        return 8;
+    public String getErrorHash() {
+        return ERROR_HASH;
     }
 }
