@@ -10,14 +10,9 @@ import java.util.EnumMap;
 import java.util.Map;
 
 public class WalkLauncher {
-
-    // :NOTE: Map<Integer
-    private static final Map<Integer, String> POSSIBLE_INPUTS = Map.of(
-            0,
+    private static final java.util.List<String> POSSIBLE_INPUTS = java.util.List.of(
             "input",
-            1,
             "output",
-            2,
             "hashing type"
     );
     private static final EnumMap<HashingType, Hasher> POSSIBLE_HASHERS = new EnumMap<>(Map.of(
@@ -58,7 +53,7 @@ public class WalkLauncher {
         if (inputFile == null || outputFile == null) {
             return;
         }
-
+        
         // :NOTE: parse stderr
         final Path parent = outputFile.getParent();
         if (parent != null) {
@@ -68,10 +63,9 @@ public class WalkLauncher {
                 System.err.println("could not create directories for outputFile path");
             }
         }
-
-        // :NOTE: encodings
-        try (final var in = Files.newBufferedReader(inputFile, StandardCharsets.UTF_8)) {
-            try (final var out = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
+        
+        try (final var in = Files.newBufferedReader(inputFile)) {
+            try (final var out = Files.newBufferedWriter(outputFile)) {
                 final Hasher hasher = POSSIBLE_HASHERS.get(hashingType);
                 final HashWriter writer = new HashWriter(out);
                 final FileVisitor<Path> walker = modificationType.createWalker(writer, hasher);
@@ -79,24 +73,21 @@ public class WalkLauncher {
                 try {
                     while ((root = in.readLine()) != null) {
                         try {
-                            // :NOTE: misleading error message
                             Files.walkFileTree(Path.of(root), walker);
                         } catch (final InvalidPathException e) {
-                            try {
-                                writer.writeHash(hasher.getErrorHash(), root);
-                            } catch (final IOException exc) {
-                                System.err.println("Error with provided output file during writing: " + exc.getMessage());
-                            }
+                            writer.writeHash(hasher.getErrorHash(), root);
+                        } catch (ImpossibleToOutputResult e) {
+                            System.err.println("Error with provided output file during writing: " + e.getMessage());
                         }
                     }
-                } catch (final IOException e) {
+                } catch (final ImpossibleToOpenFile e) {
                     System.err.println("Error with provided input file during reading: " + e.getMessage());
                 }
             } catch (final IOException e) {
-                System.err.println("Error with provided output file: " + e.getMessage());
+                System.err.println("Error with provided output file during opening: " + e.getMessage());
             }
         } catch (final IOException e) {
-            System.err.println("Error with provided input file: " + e.getMessage());
+            System.err.println("Error with provided input file during opening: " + e.getMessage());
         }
     }
     

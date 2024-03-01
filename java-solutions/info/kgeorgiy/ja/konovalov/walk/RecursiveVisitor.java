@@ -13,10 +13,9 @@ import static java.nio.file.Files.newInputStream;
 
 
 public class RecursiveVisitor extends SimpleFileVisitor<Path> {
-    private final byte[] buff = new byte[4096];
-    
     protected final HashWriter writer;
     protected final Hasher hasher;
+    private final byte[] buff = new byte[4096];
     
     public RecursiveVisitor(final HashWriter writer, Hasher hasher) {
         this.writer = writer;
@@ -25,29 +24,36 @@ public class RecursiveVisitor extends SimpleFileVisitor<Path> {
     
     
     @Override
-    public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+    public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs)
+            throws ImpossibleToOutputResult, ImpossibleToOpenFile, ImpossibleToProcessFileException {
         try (final InputStream in = new BufferedInputStream(newInputStream(file))) {
             hasher.reset();
-
             int read;
-            while ((read = in.read(buff)) != -1) {
-                hasher.hash(buff, read);
+            try {
+                while ((read = in.read(buff)) != -1) {
+                    hasher.hash(buff, read);
+                }
+                writer.writeHash(hasher.getHash(), file.toString());
+            } catch (IOException e) {
+                writeZeroHash(file);
+                throw new info.kgeorgiy.ja.konovalov.walk.ImpossibleToProcessFileException(
+                        file.toString(),
+                        e.getMessage()
+                );
             }
-            writer.writeHash(hasher.getHash(), file.toString());
         } catch (final IOException e) {
-            System.err.printf("Started processing file, but could not finish %s : %s", file, e.getMessage());
-            writeZeroHash(file);
+            throw new ImpossibleToOpenFile(file.toString(), e.getMessage());
         }
         return CONTINUE;
     }
     
     @Override
-    public FileVisitResult visitFileFailed(final Path file, final IOException exc) throws IOException {
+    public FileVisitResult visitFileFailed(final Path file, final IOException exc) throws ImpossibleToOutputResult {
         writeZeroHash(file);
         return CONTINUE;
     }
     
-    public void writeZeroHash(final Path file) throws IOException {
+    public void writeZeroHash(final Path file) throws ImpossibleToOutputResult {
         writer.writeHash(hasher.getErrorHash(), file.toString());
     }
 }

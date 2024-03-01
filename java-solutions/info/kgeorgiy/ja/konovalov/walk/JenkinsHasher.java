@@ -1,18 +1,21 @@
 package info.kgeorgiy.ja.konovalov.walk;
 
-import java.nio.ByteBuffer;
-
 public class JenkinsHasher implements Hasher {
-    int hash = 0;
     final String ERROR_HASH = "0".repeat(8);
+    int hash = 0;
     
     @Override
     public byte[] getHash() {
         hash += hash << 3;
         hash ^= hash >>> 11;
         hash += hash << 15;
-        // :NOTE: ByteBuffer.allocate
-        return ByteBuffer.allocate(4).putInt(hash).array();
+        // Ugly but... it is how it is.
+        return new byte[] {
+                (byte) (hash >>> 24),
+                (byte) (hash >>> 16),
+                (byte) (hash >>> 8),
+                (byte) hash
+        };
     }
     
     @Override

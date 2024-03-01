@@ -10,16 +10,16 @@ public class HashWriter {
         writer = out;
     }
     
-    public void writeHash(byte[] hash, String file) throws IOException {
-        // :NOTE: HexFormat
-        for (byte b : hash) {
-            writer.write(String.format("%02x", b));
-        }
-        writer.write(String.format(" %s%n", file));
+    public void writeHash(byte[] hash, String file) throws ImpossibleToOutputResult {
+        writeHash(java.util.HexFormat.of().formatHex(hash), file);
     }
     
-    public void writeHash(final String hash, final String file) throws IOException {
-        writer.write(String.format("%s %s%n", hash, file));
+    public void writeHash(final String hash, final String file) throws ImpossibleToOutputResult {
+        try {
+            writer.write(String.format("%s %s%n", hash, file));
+        } catch (IOException e) {
+            throw new ImpossibleToOutputResult(file, e.getMessage());
+        }
     }
 }
 

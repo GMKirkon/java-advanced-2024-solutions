@@ -1,6 +1,5 @@
 package info.kgeorgiy.ja.konovalov.walk;
 
-import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -11,7 +10,8 @@ public class NonRecursiveVisitor extends RecursiveVisitor {
     }
     
     @Override
-    public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+    public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs)
+            throws ImpossibleToOutputResult {
         super.writeZeroHash(dir);
         return FileVisitResult.SKIP_SUBTREE;
     }
