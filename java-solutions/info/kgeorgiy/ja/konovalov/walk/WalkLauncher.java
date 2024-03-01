@@ -9,11 +9,9 @@ import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.Map;
 
-import static java.nio.charset.Charset.defaultCharset;
-import static java.nio.file.Files.*;
-
 public class WalkLauncher {
-    
+
+    // :NOTE: Map<Integer
     private static final Map<Integer, String> POSSIBLE_INPUTS = Map.of(
             0,
             "input",
@@ -27,7 +25,7 @@ public class WalkLauncher {
             HashingType.SHA_1, new Sha1Hasher()
     ));
     
-    public static void launch(WalkModifications modificationType, final String... args) {
+    public static void launch(final WalkModifications modificationType, final String... args) {
         if (args == null || args.length < 2 || args.length > 3) {
             printUsagePattern();
             return;
@@ -48,7 +46,7 @@ public class WalkLauncher {
             switch (args[2]) {
                 case "sha-1" -> hashingType = HashingType.SHA_1;
                 case "jenkins" -> hashingType = HashingType.JENKINS;
-                case null, default -> {
+                default -> {
                     printUsagePattern();
                     return;
                 }
@@ -60,7 +58,8 @@ public class WalkLauncher {
         if (inputFile == null || outputFile == null) {
             return;
         }
-        
+
+        // :NOTE: parse stderr
         final Path parent = outputFile.getParent();
         if (parent != null) {
             try {
@@ -69,9 +68,10 @@ public class WalkLauncher {
                 System.err.println("could not create directories for outputFile path");
             }
         }
-        
-        try (final var in = newBufferedReader(inputFile, StandardCharsets.UTF_8)) {
-            try (final var out = newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
+
+        // :NOTE: encodings
+        try (final var in = Files.newBufferedReader(inputFile, StandardCharsets.UTF_8)) {
+            try (final var out = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
                 final Hasher hasher = POSSIBLE_HASHERS.get(hashingType);
                 final HashWriter writer = new HashWriter(out);
                 final FileVisitor<Path> walker = modificationType.createWalker(writer, hasher);
@@ -79,7 +79,8 @@ public class WalkLauncher {
                 try {
                     while ((root = in.readLine()) != null) {
                         try {
-                            walkFileTree(Path.of(root), walker);
+                            // :NOTE: misleading error message
+                            Files.walkFileTree(Path.of(root), walker);
                         } catch (final InvalidPathException e) {
                             try {
                                 writer.writeHash(hasher.getErrorHash(), root);
@@ -106,7 +107,7 @@ public class WalkLauncher {
         System.err.println("<input file with files and dirs> <output file> <hashing method: sha-1 or jenkins>");
     }
     
-    static private Path parseFileNameToPath(String filename, String errorName) {
+    static private Path parseFileNameToPath(final String filename, final String errorName) {
         try {
             return Path.of(filename);
         } catch (final InvalidPathException e) {

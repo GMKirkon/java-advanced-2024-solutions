@@ -27,8 +27,9 @@ public class RecursiveVisitor extends SimpleFileVisitor<Path> {
     @Override
     public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
         try (final InputStream in = new BufferedInputStream(newInputStream(file))) {
-            int read;
             hasher.reset();
+
+            int read;
             while ((read = in.read(buff)) != -1) {
                 hasher.hash(buff, read);
             }

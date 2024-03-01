@@ -6,7 +6,6 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 
 public class NonRecursiveVisitor extends RecursiveVisitor {
-    
     public NonRecursiveVisitor(final HashWriter writer, Hasher hasher) {
         super(writer, hasher);
     }

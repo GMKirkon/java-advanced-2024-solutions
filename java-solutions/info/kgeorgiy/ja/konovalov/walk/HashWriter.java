@@ -11,6 +11,7 @@ public class HashWriter {
     }
     
     public void writeHash(byte[] hash, String file) throws IOException {
+        // :NOTE: HexFormat
         for (byte b : hash) {
             writer.write(String.format("%02x", b));
         }
