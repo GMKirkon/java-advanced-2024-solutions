@@ -14,7 +14,7 @@ import static java.nio.file.Files.*;
 
 public class WalkLauncher {
     
-    private static final Map<Integer, String> possibleInputs = Map.of(
+    private static final Map<Integer, String> POSSIBLE_INPUTS = Map.of(
             0,
             "input",
             1,
@@ -22,7 +22,7 @@ public class WalkLauncher {
             2,
             "hashing type"
     );
-    private final static EnumMap<HashingType, Hasher> possibleHashers = new EnumMap<>(Map.of(
+    private static final EnumMap<HashingType, Hasher> POSSIBLE_HASHERS = new EnumMap<>(Map.of(
             HashingType.JENKINS, new JenkinsHasher(),
             HashingType.SHA_1, new Sha1Hasher()
     ));
@@ -35,7 +35,7 @@ public class WalkLauncher {
         
         for (int i = 0; i < args.length; i++) {
             if (args[i] == null) {
-                System.err.printf("Provided %s was null%n", possibleInputs.get(i));
+                System.err.printf("Provided %s was null%n", POSSIBLE_INPUTS.get(i));
                 printUsagePattern();
                 return;
             }
@@ -72,7 +72,7 @@ public class WalkLauncher {
         
         try (final var in = newBufferedReader(inputFile, StandardCharsets.UTF_8)) {
             try (final var out = newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
-                final Hasher hasher = possibleHashers.get(hashingType);
+                final Hasher hasher = POSSIBLE_HASHERS.get(hashingType);
                 final HashWriter writer = new HashWriter(out);
                 final FileVisitor<Path> walker = modificationType.createWalker(writer, hasher);
                 String root;
