@@ -4,7 +4,7 @@ import java.util.*;
 
 import static java.lang.Integer.min;
 
-public class ArraySet<E> extends AbstractSet<E> implements NavigableSet<E>, List<E> {
+public class ArraySet<E> extends AbstractList<E> implements NavigableSet<E>, List<E> {
     
     private final Comparator<? super E> cmp;
     private final List<E> list;
@@ -16,7 +16,7 @@ public class ArraySet<E> extends AbstractSet<E> implements NavigableSet<E>, List
     
     public ArraySet(Collection<? extends E> collection) {
         cmp = null;
-        list = List.copyOf(makeUnique(collection));
+        list = Collections.unmodifiableList(makeUnique(collection));
     }
     
     private List<E> makeUnique(Collection<? extends E> collection) {
@@ -61,7 +61,7 @@ public class ArraySet<E> extends AbstractSet<E> implements NavigableSet<E>, List
     
     public ArraySet(Collection<? extends E> collection, Comparator<? super E> comparator) {
         cmp = comparator;
-        list = List.copyOf(makeUnique(collection));
+        list = Collections.unmodifiableList(makeUnique(collection));
     }
     
     @Override
@@ -114,22 +114,16 @@ public class ArraySet<E> extends AbstractSet<E> implements NavigableSet<E>, List
     
     @Override
     public E pollFirst() {
-        prohibitPolling();
-        return null;
-    }
-    
-    private void prohibitPolling() {
-        throw new UnsupportedOperationException("polling from unmodifiable set is unsupported");
+        throw new UncheckedUnmodifiableClassException();
     }
     
     @Override
     public E pollLast() {
-        prohibitPolling();
-        return null;
+        throw new UncheckedUnmodifiableClassException();
     }
     
     @Override
-    public NavigableSet<E> descendingSet() {
+    public ArraySet<E> descendingSet() {
         return new ArraySet<>(list.reversed(), Collections.reverseOrder(cmp));
     }
     
@@ -182,27 +176,27 @@ public class ArraySet<E> extends AbstractSet<E> implements NavigableSet<E>, List
     public E first() {
         return list.getFirst();
     }
-    
+
     @Override
     public E last() {
         return list.getLast();
     }
     
     @Override
-    public java.util.Spliterator<E> spliterator() {
-        return java.util.NavigableSet.super.spliterator();
+    public Spliterator<E> spliterator() {
+        return NavigableSet.super.spliterator();
     }
     
     @Override
     public void addFirst(E e) {
-        throw new UnsupportedOperationException("unmodiable");
+        throw new UncheckedUnmodifiableClassException();
     }
     
     @Override
     public void addLast(E e) {
-        throw new UnsupportedOperationException("unmodiable");
+        throw new UncheckedUnmodifiableClassException();
     }
-    
+
     @Override
     public E getFirst() {
         return list.getFirst();
@@ -225,17 +219,12 @@ public class ArraySet<E> extends AbstractSet<E> implements NavigableSet<E>, List
     
     @Override
     public E removeFirst() {
-        throw new UnsupportedOperationException("unmodiable");
+        throw new UncheckedUnmodifiableClassException();
     }
     
     @Override
     public E removeLast() {
-        throw new UnsupportedOperationException("unmodiable");
-    }
-    
-    @Override
-    public Iterator<E> iterator() {
-        return list.iterator();
+        throw new UncheckedUnmodifiableClassException();
     }
     
     @Override
@@ -244,63 +233,16 @@ public class ArraySet<E> extends AbstractSet<E> implements NavigableSet<E>, List
     }
     
     @Override
-    public boolean isEmpty() {
-        return list.isEmpty();
-    }
-    
-    @Override
-    @SuppressWarnings("unchecked")
     public boolean contains(Object o) {
-        E actualElement = (E) o;
-        var index = lowerIndex(actualElement, true);
-        return index >= 0 && actualCompare(list.get(index), actualElement) == 0;
+        return indexOf(o) >= 0;
     }
-    
-    @Override
-    public Object[] toArray() {
-        return list.toArray();
-    }
-    
-    @Override
-    public <T> T[] toArray(T[] a) {
-        return list.toArray(a);
-    }
-    
-    @Override
-    public boolean addAll(int index, java.util.Collection<? extends E> c) {
-        throw new UnsupportedOperationException("unmodifiable");
-    }
-    
-    @Override
-    public void replaceAll(java.util.function.UnaryOperator<E> operator) {
-        throw new UnsupportedOperationException("unmodiable");
-    }
-    
-    @Override
-    public void sort(java.util.Comparator<? super E> c) {
-        throw new UnsupportedOperationException("unmodiable");
-    }
-    
+
     @Override
     public E get(int index) {
         return list.get(index);
     }
     
-    @Override
-    public E set(int index, E element) {
-        throw new UnsupportedOperationException("unmodiable");
-    }
-    
-    @Override
-    public void add(int index, E element) {
-        throw new UnsupportedOperationException("unmodiable");
-    }
-    
-    @Override
-    public E remove(int index) {
-        return null;
-    }
-    
+
     @Override
     @SuppressWarnings("unchecked")
     public int indexOf(Object o) {
@@ -311,28 +253,14 @@ public class ArraySet<E> extends AbstractSet<E> implements NavigableSet<E>, List
         E result = get(index);
         return actualCompare((E)o, result) == 0 ? index : -1;
     }
-    
+
     @Override
     public int lastIndexOf(Object o) {
         return indexOf(o);
     }
     
     @Override
-    public java.util.ListIterator<E> listIterator() {
-        return list.listIterator();
-    }
-    
-    @Override
-    public java.util.ListIterator<E> listIterator(int index) {
-        return list.listIterator(index);
-    }
-    
-    @Override
-    public List<E> subList(int fromIndex, int toIndex) {
-        return subList(fromIndex, toIndex);
-    }
-    
     public ArraySet<E> reversed() {
-        return new ArraySet<>(list.reversed(), Collections.reverseOrder(cmp));
+        return descendingSet();
     }
 }
