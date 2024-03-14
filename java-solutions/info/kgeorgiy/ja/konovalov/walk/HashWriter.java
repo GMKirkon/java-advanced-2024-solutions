@@ -2,6 +2,7 @@ package info.kgeorgiy.ja.konovalov.walk;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.HexFormat;
 
 public class HashWriter {
     Writer writer;
@@ -11,7 +12,7 @@ public class HashWriter {
     }
     
     public void writeHash(byte[] hash, String file) throws ImpossibleToOutputResult {
-        writeHash(java.util.HexFormat.of().formatHex(hash), file);
+        writeHash(HexFormat.of().formatHex(hash), file);
     }
     
     public void writeHash(final String hash, final String file) throws ImpossibleToOutputResult {

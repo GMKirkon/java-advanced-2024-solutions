@@ -24,25 +24,16 @@ public class RecursiveVisitor extends SimpleFileVisitor<Path> {
     
     
     @Override
-    public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs)
-            throws ImpossibleToOutputResult, ImpossibleToOpenFile, ImpossibleToProcessFileException {
+    public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws ImpossibleToOutputResult {
         try (final InputStream in = new BufferedInputStream(newInputStream(file))) {
             hasher.reset();
             int read;
-            try {
-                while ((read = in.read(buff)) != -1) {
-                    hasher.hash(buff, read);
-                }
-                writer.writeHash(hasher.getHash(), file.toString());
-            } catch (IOException e) {
-                writeZeroHash(file);
-                throw new info.kgeorgiy.ja.konovalov.walk.ImpossibleToProcessFileException(
-                        file.toString(),
-                        e.getMessage()
-                );
+            while ((read = in.read(buff)) != -1) {
+                hasher.hash(buff, read);
             }
+            writer.writeHash(hasher.getHash(), file.toString());
         } catch (final IOException e) {
-            throw new ImpossibleToOpenFile(file.toString(), e.getMessage());
+            writeZeroHash(file);
         }
         return CONTINUE;
     }

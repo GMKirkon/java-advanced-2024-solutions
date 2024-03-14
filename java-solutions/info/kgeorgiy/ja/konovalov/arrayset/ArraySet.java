@@ -2,26 +2,27 @@ package info.kgeorgiy.ja.konovalov.arrayset;
 
 import java.util.*;
 
-import static java.lang.Integer.min;
-
 public class ArraySet<E> extends AbstractList<E> implements NavigableSet<E>, List<E> {
     
-    private final Comparator<? super E> cmp;
+    private final Comparator<? super E> comparator;
+    private final Comparator<? super E> naturalOrderComparator;
     private final List<E> list;
     
     public ArraySet() {
-        cmp = null;
+        comparator = null;
+        naturalOrderComparator = getNaturalOrderComparator();
         list = Collections.emptyList();
     }
     
     public ArraySet(Collection<? extends E> collection) {
-        cmp = null;
+        comparator = null;
+        naturalOrderComparator = getNaturalOrderComparator();
         list = Collections.unmodifiableList(makeUnique(collection));
     }
     
     private List<E> makeUnique(Collection<? extends E> collection) {
         ArrayList<E> tmp = new java.util.ArrayList<>(collection);
-        tmp.sort(cmp);
+        tmp.sort(comparator);
         int left = 1;
         for (int right = 1; right < tmp.size(); right++) {
             if (actualCompare(tmp.get(left - 1), tmp.get(right)) != 0) {
@@ -29,40 +30,52 @@ public class ArraySet<E> extends AbstractList<E> implements NavigableSet<E>, Lis
                 left++;
             }
         }
-        return tmp.subList(0, min(left, tmp.size()));
+        return tmp.subList(0, java.lang.Integer.min(left, tmp.size()));
     }
     
-    @SuppressWarnings("unchecked")
     private int actualCompare(E a, E b) {
-        if (cmp == null) {
-            return ((Comparable<E>) a).compareTo(b);
-        } else {
-            return cmp.compare(a, b);
-        }
+        return comparator != null ? comparator.compare(a, b) : naturalOrderComparator.compare(a, b);
     }
     
     public ArraySet(Comparator<? super E> comparator) {
-        cmp = comparator;
+        this.comparator = comparator;
+        naturalOrderComparator = null;
         list = Collections.emptyList();
     }
     
-    //ah, old good semantics by naming... One day I hope there will be templates, not generics.
+    //ah, old good semantics by naming... One day I hope there will be templates, not generics. That day would never come.
     private ArraySet(List<E> unmodifiableOrderedList, Comparator<? super E> comparator)
     /* requires(is_unmodifiable_v<decltype(unmodifiableList)>
     // ok that's unreal && is_ordered_v<decltype(unmodifiableOrderedList)>) */ {
-        cmp = comparator;
+        this.comparator = comparator;
+        naturalOrderComparator = getNaturalOrderComparator();
         list = unmodifiableOrderedList;
     }
     
     public ArraySet(ArraySet<E> other) {
-        cmp = other.cmp;
+        comparator = other.comparator;
+        naturalOrderComparator = other.naturalOrderComparator;
         list = other.list;
     }
     
     public ArraySet(Collection<? extends E> collection, Comparator<? super E> comparator) {
-        cmp = comparator;
+        this.comparator = comparator;
+        naturalOrderComparator = getNaturalOrderComparator();
         list = Collections.unmodifiableList(makeUnique(collection));
     }
+    
+    private Comparator<? super E> getNaturalOrderComparator() {
+        // leads to extra unchecked cast
+        // return comparator != null ? null : ArraySet.<E>naturalOrder();
+        
+        // unchecked cast is inside standard library
+        return comparator != null ? null : Collections.reverseOrder().reversed();
+    }
+    
+    
+//    public static <T> Comparator<T> naturalOrder() {
+//       return (Comparator<T>) java.util.Comparator.naturalOrder();
+//    }
     
     @Override
     public E lower(E e) {
@@ -79,7 +92,7 @@ public class ArraySet<E> extends AbstractList<E> implements NavigableSet<E>, Lis
     }
     
     private int getIndex(E e, int addIfInside, int addIfAbsent) {
-        var index = Collections.binarySearch(list, e, cmp);
+        var index = Collections.binarySearch(list, e, comparator);
         if (index >= 0) {
             index += addIfInside;
         } else {
@@ -108,6 +121,38 @@ public class ArraySet<E> extends AbstractList<E> implements NavigableSet<E>, Lis
     }
     
     @Override
+    public int size() {
+        return list.size();
+    }
+    
+    @Override
+    public boolean contains(Object o) {
+        return indexOf(o) >= 0;
+    }
+    
+    @Override
+    public E get(int index) {
+        return list.get(index);
+    }
+    
+    @Override
+    @SuppressWarnings("unchecked")
+    public int indexOf(Object o) {
+        E e = (E) o;
+        int index = lowerIndex(e, true);
+        if (index < 0) {
+            return -1;
+        }
+        E result = get(index);
+        return actualCompare(e, result) == 0 ? index : -1;
+    }
+    
+    @Override
+    public int lastIndexOf(Object o) {
+        return indexOf(o);
+    }
+    
+    @Override
     public E higher(E e) {
         return upperElement(e, false);
     }
@@ -124,7 +169,7 @@ public class ArraySet<E> extends AbstractList<E> implements NavigableSet<E>, Lis
     
     @Override
     public ArraySet<E> descendingSet() {
-        return new ArraySet<>(list.reversed(), Collections.reverseOrder(cmp));
+        return new ArraySet<>(list.reversed(), Collections.reverseOrder(comparator));
     }
     
     @Override
@@ -169,17 +214,27 @@ public class ArraySet<E> extends AbstractList<E> implements NavigableSet<E>, Lis
     
     @Override
     public Comparator<? super E> comparator() {
-        return cmp;
+        return comparator;
     }
     
     @Override
     public E first() {
         return list.getFirst();
     }
-
+    
     @Override
     public E last() {
         return list.getLast();
+    }
+    
+    @Override
+    public SortedSet<E> headSet(E toElement) {
+        return headSet(toElement, false);
+    }
+    
+    @Override
+    public SortedSet<E> tailSet(E fromElement) {
+        return tailSet(fromElement, true);
     }
     
     @Override
@@ -196,7 +251,7 @@ public class ArraySet<E> extends AbstractList<E> implements NavigableSet<E>, Lis
     public void addLast(E e) {
         throw new UncheckedUnmodifiableClassException();
     }
-
+    
     @Override
     public E getFirst() {
         return list.getFirst();
@@ -208,16 +263,6 @@ public class ArraySet<E> extends AbstractList<E> implements NavigableSet<E>, Lis
     }
     
     @Override
-    public SortedSet<E> headSet(E toElement) {
-        return headSet(toElement, false);
-    }
-    
-    @Override
-    public SortedSet<E> tailSet(E fromElement) {
-        return tailSet(fromElement, true);
-    }
-    
-    @Override
     public E removeFirst() {
         throw new UncheckedUnmodifiableClassException();
     }
@@ -225,38 +270,6 @@ public class ArraySet<E> extends AbstractList<E> implements NavigableSet<E>, Lis
     @Override
     public E removeLast() {
         throw new UncheckedUnmodifiableClassException();
-    }
-    
-    @Override
-    public int size() {
-        return list.size();
-    }
-    
-    @Override
-    public boolean contains(Object o) {
-        return indexOf(o) >= 0;
-    }
-
-    @Override
-    public E get(int index) {
-        return list.get(index);
-    }
-    
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public int indexOf(Object o) {
-        int index = lowerIndex((E)o, true);
-        if (index < 0) {
-            return -1;
-        }
-        E result = get(index);
-        return actualCompare((E)o, result) == 0 ? index : -1;
-    }
-
-    @Override
-    public int lastIndexOf(Object o) {
-        return indexOf(o);
     }
     
     @Override

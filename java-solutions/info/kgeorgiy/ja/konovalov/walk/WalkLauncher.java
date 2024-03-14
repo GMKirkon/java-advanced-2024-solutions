@@ -1,16 +1,16 @@
 package info.kgeorgiy.ja.konovalov.walk;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 
 public class WalkLauncher {
-    private static final java.util.List<String> POSSIBLE_INPUTS = java.util.List.of(
+    private static final List<String> POSSIBLE_INPUTS = List.of(
             "input",
             "output",
             "hashing type"
@@ -34,6 +34,15 @@ public class WalkLauncher {
             }
         }
         
+        try {
+            unsafeLaunch(modificationType, args);
+        } catch (WalkingException e) {
+            System.err.println(e.getMessage());
+        }
+    }
+    
+    private static void unsafeLaunch(final WalkModifications modificationType, final String... args) throws WalkingException {
+        
         final HashingType hashingType;
         if (args.length == 2) {
             hashingType = HashingType.JENKINS;
@@ -50,46 +59,36 @@ public class WalkLauncher {
         
         final Path inputFile = parseFileNameToPath(args[0], "input");
         final Path outputFile = parseFileNameToPath(args[1], "output");
-        if (inputFile == null || outputFile == null) {
-            return;
-        }
         
-        // :NOTE: parse stderr
         final Path parent = outputFile.getParent();
         if (parent != null) {
             try {
                 Files.createDirectories(parent);
             } catch (final IOException e) {
-                System.err.println("could not create directories for outputFile path");
+                throw new CouldNotCreateParentDirsToOutputFile(parent.toString());
             }
         }
         
+        final Hasher hasher = POSSIBLE_HASHERS.get(hashingType);
+        
         try (final var in = Files.newBufferedReader(inputFile)) {
             try (final var out = Files.newBufferedWriter(outputFile)) {
-                final Hasher hasher = POSSIBLE_HASHERS.get(hashingType);
                 final HashWriter writer = new HashWriter(out);
                 final FileVisitor<Path> walker = modificationType.createWalker(writer, hasher);
                 String root;
-                try {
-                    while ((root = in.readLine()) != null) {
-                        try {
-                            Files.walkFileTree(Path.of(root), walker);
-                        } catch (final InvalidPathException e) {
-                            writer.writeHash(hasher.getErrorHash(), root);
-                        }
+                while ((root = in.readLine()) != null) {
+                    try {
+                        Files.walkFileTree(Path.of(root), walker);
+                    } catch (final InvalidPathException e) {
+                        writer.writeHash(hasher.getErrorHash(), root);
+                        System.err.println(e.getMessage());
                     }
-                } catch (ImpossibleToOutputResult e) {
-                    System.err.println(e.getMessage());
-                } catch (ImpossibleToProcessFileException e) {
-                    System.err.println(e.getMessage());
-                } catch (final ImpossibleToOpenFile e) {
-                    System.err.println(e.getMessage());
                 }
             } catch (final IOException e) {
-                System.err.println("Error with provided output file during opening: " + e.getMessage());
+                throw new ImpossibleToOpenFile("output file " + outputFile, e.getMessage());
             }
         } catch (final IOException e) {
-            System.err.println("Error with provided input file during opening: " + e.getMessage());
+            throw new ImpossibleToOpenFile("input file " + inputFile, e.getMessage());
         }
     }
     
@@ -104,8 +103,11 @@ public class WalkLauncher {
         try {
             return Path.of(filename);
         } catch (final InvalidPathException e) {
-            System.err.printf("Provided %s file was not correct: %s%n", errorName, e.getMessage());
-            return null;
+            throw new WalkingException(String.format(
+                    "Provided %s file was not correct: %s%n",
+                    errorName,
+                    e.getMessage()
+            ));
         }
     }
 }
