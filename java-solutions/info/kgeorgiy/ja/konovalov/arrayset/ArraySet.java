@@ -15,9 +15,6 @@ public class ArraySet<E> extends AbstractList<E> implements NavigableSet<E>, Lis
     }
     
     private Comparator<? super E> getNaturalOrderComparator() {
-        // leads to extra unchecked cast
-        // return comparator != null ? null : ArraySet.<E>naturalOrder();
-        
         // unchecked cast is inside standard library
         return comparator != null ? null : Collections.reverseOrder().reversed();
     }
@@ -52,9 +49,7 @@ public class ArraySet<E> extends AbstractList<E> implements NavigableSet<E>, Lis
     }
     
     //ah, old good semantics by naming... One day I hope there will be templates, not generics. That day would never come.
-    private ArraySet(List<E> unmodifiableOrderedList, Comparator<? super E> comparator)
-    /* requires(is_unmodifiable_v<decltype(unmodifiableList)>
-    // ok that's unreal && is_ordered_v<decltype(unmodifiableOrderedList)>) */ {
+    private ArraySet(List<E> unmodifiableOrderedList, Comparator<? super E> comparator) {
         this.comparator = comparator;
         naturalOrderComparator = getNaturalOrderComparator();
         list = unmodifiableOrderedList;
@@ -71,11 +66,6 @@ public class ArraySet<E> extends AbstractList<E> implements NavigableSet<E>, Lis
         naturalOrderComparator = getNaturalOrderComparator();
         list = Collections.unmodifiableList(makeUnique(collection));
     }
-    
-    
-    //    public static <T> Comparator<T> naturalOrder() {
-    //       return (Comparator<T>) java.util.Comparator.naturalOrder();
-    //    }
     
     @Override
     public E lower(E e) {
