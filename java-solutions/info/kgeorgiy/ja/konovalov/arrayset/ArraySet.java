@@ -14,6 +14,14 @@ public class ArraySet<E> extends AbstractList<E> implements NavigableSet<E>, Lis
         list = Collections.emptyList();
     }
     
+    private Comparator<? super E> getNaturalOrderComparator() {
+        // leads to extra unchecked cast
+        // return comparator != null ? null : ArraySet.<E>naturalOrder();
+        
+        // unchecked cast is inside standard library
+        return comparator != null ? null : Collections.reverseOrder().reversed();
+    }
+    
     public ArraySet(Collection<? extends E> collection) {
         comparator = null;
         naturalOrderComparator = getNaturalOrderComparator();
@@ -64,18 +72,10 @@ public class ArraySet<E> extends AbstractList<E> implements NavigableSet<E>, Lis
         list = Collections.unmodifiableList(makeUnique(collection));
     }
     
-    private Comparator<? super E> getNaturalOrderComparator() {
-        // leads to extra unchecked cast
-        // return comparator != null ? null : ArraySet.<E>naturalOrder();
-        
-        // unchecked cast is inside standard library
-        return comparator != null ? null : Collections.reverseOrder().reversed();
-    }
     
-    
-//    public static <T> Comparator<T> naturalOrder() {
-//       return (Comparator<T>) java.util.Comparator.naturalOrder();
-//    }
+    //    public static <T> Comparator<T> naturalOrder() {
+    //       return (Comparator<T>) java.util.Comparator.naturalOrder();
+    //    }
     
     @Override
     public E lower(E e) {
