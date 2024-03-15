@@ -17,11 +17,10 @@ public class RecursiveVisitor extends SimpleFileVisitor<Path> {
     protected final Hasher hasher;
     private final byte[] buff = new byte[4096];
     
-    public RecursiveVisitor(final HashWriter writer, Hasher hasher) {
+    public RecursiveVisitor(final HashWriter writer, final Hasher hasher) {
         this.writer = writer;
         this.hasher = hasher;
     }
-    
     
     @Override
     public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws ImpossibleToOutputResult {

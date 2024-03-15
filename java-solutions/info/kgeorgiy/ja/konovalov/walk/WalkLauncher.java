@@ -41,8 +41,7 @@ public class WalkLauncher {
         }
     }
     
-    private static void unsafeLaunch(final WalkModifications modificationType, final String... args) throws WalkingException {
-        
+    public static void unsafeLaunch(final WalkModifications modificationType, final String... args) throws WalkingException {
         final HashingType hashingType;
         if (args.length == 2) {
             hashingType = HashingType.JENKINS;
@@ -77,6 +76,7 @@ public class WalkLauncher {
                 final HashWriter writer = new HashWriter(out);
                 final FileVisitor<Path> walker = modificationType.createWalker(writer, hasher);
                 String root;
+                // :NOTE: ??
                 while ((root = in.readLine()) != null) {
                     try {
                         Files.walkFileTree(Path.of(root), walker);

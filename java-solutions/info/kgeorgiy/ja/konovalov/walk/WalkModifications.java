@@ -4,6 +4,7 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Path;
 
 public enum WalkModifications {
+    // :NOTE: BiFunction<>
     RECURSIVE {
         @Override
         public FileVisitor<Path> createWalker(HashWriter walker, Hasher hasher) {
