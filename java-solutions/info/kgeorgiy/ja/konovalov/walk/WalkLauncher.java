@@ -65,7 +65,8 @@ public class WalkLauncher {
             try {
                 Files.createDirectories(parent);
             } catch (final IOException e) {
-                throw new CouldNotCreateParentDirsToOutputFile(parent.toString());
+                System.err.println("Warning, could not create parent directories to output file");
+                // throw new CouldNotCreateParentDirsToOutputFile(parent.toString());
             }
         }
         
