@@ -2,6 +2,8 @@ package info.kgeorgiy.ja.konovalov.arrayset;
 
 import java.util.*;
 
+import static java.lang.Math.min;
+
 public class ArraySet<E> extends AbstractList<E> implements NavigableSet<E>, List<E> {
     
     private final Comparator<? super E> comparator;
@@ -26,7 +28,7 @@ public class ArraySet<E> extends AbstractList<E> implements NavigableSet<E>, Lis
     }
     
     private List<E> makeUnique(Collection<? extends E> collection) {
-        ArrayList<E> tmp = new java.util.ArrayList<>(collection);
+        ArrayList<E> tmp = new ArrayList<>(collection);
         tmp.sort(comparator);
         int left = 1;
         for (int right = 1; right < tmp.size(); right++) {
@@ -35,7 +37,7 @@ public class ArraySet<E> extends AbstractList<E> implements NavigableSet<E>, Lis
                 left++;
             }
         }
-        return tmp.subList(0, java.lang.Integer.min(left, tmp.size()));
+        return tmp.subList(0, min(left, tmp.size()));
     }
     
     private int actualCompare(E a, E b) {
