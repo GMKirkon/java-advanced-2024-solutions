@@ -188,14 +188,14 @@ public class ArraySet<E> extends AbstractList<E> implements NavigableSet<E>, Lis
     @Override
     public NavigableSet<E> headSet(E toElement, boolean inclusive) {
         return isEmpty() ?
-                Collections.emptyNavigableSet() :
+                new ArraySet<>(comparator()) :
                 unsafeSubSet(getFirst(), true, toElement, inclusive);
     }
     
     @Override
     public NavigableSet<E> tailSet(E fromElement, boolean inclusive) {
         return isEmpty() ?
-                Collections.emptyNavigableSet() :
+                new ArraySet<>(comparator()) :
                 unsafeSubSet(fromElement, inclusive, getLast(), true);
     }
     
@@ -209,7 +209,7 @@ public class ArraySet<E> extends AbstractList<E> implements NavigableSet<E>, Lis
         int toIndex = lowerIndex(toElement, toInclusive);
         return fromIndex <= toIndex ?
                 new ArraySet<>(list.subList(fromIndex, toIndex + 1), comparator()) :
-                Collections.emptyNavigableSet();
+                new ArraySet<>(comparator());
     }
     
     @Override
