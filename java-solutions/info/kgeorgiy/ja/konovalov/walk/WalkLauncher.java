@@ -81,7 +81,6 @@ public class WalkLauncher {
                         Files.walkFileTree(Path.of(root), walker);
                     } catch (final InvalidPathException e) {
                         writer.writeHash(hasher.getErrorHash(), root);
-                        System.err.println(e.getMessage());
                     }
                 }
             } catch (final IOException e) {
