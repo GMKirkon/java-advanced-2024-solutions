@@ -5,9 +5,9 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 
 public class WalkLauncher {
     private static final List<String> POSSIBLE_INPUTS = List.of(
@@ -15,12 +15,12 @@ public class WalkLauncher {
             "output",
             "hashing type"
     );
-    private static final EnumMap<HashingType, Hasher> POSSIBLE_HASHERS = new EnumMap<>(Map.of(
-            HashingType.JENKINS, new JenkinsHasher(),
-            HashingType.SHA_1, new Sha1Hasher()
-    ));
+    private static final Map<Object, Hasher> POSSIBLE_HASHERS = Map.of(
+            JenkinsHasher.class, new JenkinsHasher(),
+            Sha1Hasher.class, new Sha1Hasher()
+    );
     
-    public static void launch(final WalkModifications modificationType, final String... args) {
+    public static void launch(final BiFunction<HashWriter, Hasher, FileVisitor<Path>> walkerCreator, final String... args) {
         if (args == null || args.length < 2 || args.length > 3) {
             printUsagePattern();
             return;
@@ -35,20 +35,28 @@ public class WalkLauncher {
         }
         
         try {
-            unsafeLaunch(modificationType, args);
+            unsafeLaunch(walkerCreator, args);
         } catch (WalkingException e) {
             System.err.println(e.getMessage());
         }
     }
     
-    public static void unsafeLaunch(final WalkModifications modificationType, final String... args) throws WalkingException {
-        final HashingType hashingType;
+    private static void printUsagePattern() {
+        System.err.println("Expected number of arguments from 2 to 3");
+        System.err.println("Usages");
+        System.err.println("<input file with files and dirs> <output file>");
+        System.err.println("<input file with files and dirs> <output file> <hashing method: sha-1 or jenkins>");
+    }
+    
+    public static void unsafeLaunch(final BiFunction<HashWriter, Hasher, FileVisitor<Path>> walkerCreator, final String... args) throws WalkingException {
+        
+        final Hasher hasher;
         if (args.length == 2) {
-            hashingType = HashingType.JENKINS;
+            hasher = POSSIBLE_HASHERS.get(JenkinsHasher.class);
         } else {
             switch (args[2]) {
-                case "sha-1" -> hashingType = HashingType.SHA_1;
-                case "jenkins" -> hashingType = HashingType.JENKINS;
+                case "sha-1" -> hasher = POSSIBLE_HASHERS.get(Sha1Hasher.class);
+                case "jenkins" -> hasher = POSSIBLE_HASHERS.get(JenkinsHasher.class);
                 default -> {
                     printUsagePattern();
                     return;
@@ -65,24 +73,25 @@ public class WalkLauncher {
                 Files.createDirectories(parent);
             } catch (final IOException e) {
                 System.err.println("Warning, could not create parent directories to output file");
-                // throw new CouldNotCreateParentDirsToOutputFile(parent.toString());
             }
         }
         
-        final Hasher hasher = POSSIBLE_HASHERS.get(hashingType);
         
         try (final var in = Files.newBufferedReader(inputFile)) {
             try (final var out = Files.newBufferedWriter(outputFile)) {
                 final HashWriter writer = new HashWriter(out);
-                final FileVisitor<Path> walker = modificationType.createWalker(writer, hasher);
+                final var walker = walkerCreator.apply(writer, hasher);
                 String root;
-                // :NOTE: ??
-                while ((root = in.readLine()) != null) {
-                    try {
-                        Files.walkFileTree(Path.of(root), walker);
-                    } catch (final InvalidPathException e) {
-                        writer.writeHash(hasher.getErrorHash(), root);
+                try {
+                    while ((root = in.readLine()) != null) {
+                        try {
+                            Files.walkFileTree(Path.of(root), walker);
+                        } catch (final InvalidPathException e) {
+                            writer.writeHash(hasher.getErrorHash(), root);
+                        }
                     }
+                } catch (final IOException e) {
+                    throw new WalkingException("Error processing input file");
                 }
             } catch (final IOException e) {
                 throw new ImpossibleToOpenFile("output file " + outputFile, e.getMessage());
@@ -90,13 +99,6 @@ public class WalkLauncher {
         } catch (final IOException e) {
             throw new ImpossibleToOpenFile("input file " + inputFile, e.getMessage());
         }
-    }
-    
-    private static void printUsagePattern() {
-        System.err.println("Expected number of arguments from 2 to 3");
-        System.err.println("Usages");
-        System.err.println("<input file with files and dirs> <output file>");
-        System.err.println("<input file with files and dirs> <output file> <hashing method: sha-1 or jenkins>");
     }
     
     static private Path parseFileNameToPath(final String filename, final String errorName) {
