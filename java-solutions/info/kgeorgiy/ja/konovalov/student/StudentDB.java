@@ -54,6 +54,7 @@ public class StudentDB implements AdvancedQuery {
     
     @Override
     public String getMaxStudentFirstName(List<Student> students) {
+        // :NOTE: reuse comp
         return getMaxMapFromCollection(students, Comparator.comparing(Student::getId), Student::getFirstName, "");
     }
     
@@ -121,7 +122,7 @@ public class StudentDB implements AdvancedQuery {
     
     @Override
     public String getLeastPopularName(Collection<Student> students) {
-        return getMostNameByComparator(students, Collections.reverseOrder(Map.Entry.comparingByValue()));
+        return getMostNameByComparator(students, Collections.reverseOrder(Map.Entry.comparingByValue())); // :NOTE: same
     }
     
 

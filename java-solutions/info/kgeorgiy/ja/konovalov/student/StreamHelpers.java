@@ -16,11 +16,11 @@ public class StreamHelpers {
     ) {
         return processToList(students, StreamAdapters.sortByFunction(method));
     }
-    
+
     public static <T, U> List<U> processToList(Collection<T> students, Function<Stream<T>, Stream<U>> method) {
         return streamizeTheCollection(students, method, Collectors.toList());
     }
-    
+
     public static <T, U, A, R> R streamizeTheCollection(
             Collection<T> students, Function<Stream<T>,
             Stream<U>> method,
@@ -28,26 +28,26 @@ public class StreamHelpers {
     ) {
         return method.apply(students.stream()).collect(collector);
     }
-    
+
     public static <T> List<T> sortCollectionByComparator(Collection<T> students, Comparator<T> comparator) {
         return processToList(students, StreamAdapters.sortByComparator(comparator));
     }
-    
+
     public static <T> List<T> filterCollectionByPredicate(Collection<T> students, Predicate<T> method) {
         return processToList(students, StreamAdapters.filter(method));
     }
-    
+
     public static <T, U> List<U> mapCollection(Collection<T> students, Function<T, U> method) {
         return processToList(students, StreamAdapters.map(method));
     }
-    
+
     public static <T, U> U getMaxMapFromCollection(
             Collection<T> students, Comparator<T> comparator,
             Function<T, U> mapper,
             U defaultValue
     ) {
         return students.stream().max(comparator)
-                       .map(mapper)
-                       .orElse(defaultValue);
+                .map(mapper)
+                .orElse(defaultValue);
     }
 }
