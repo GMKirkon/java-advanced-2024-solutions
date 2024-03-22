@@ -5,12 +5,13 @@ import info.kgeorgiy.java.advanced.implementor.ImplerException;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 public class ClassRepresentation {
     
@@ -29,10 +30,11 @@ public class ClassRepresentation {
                 u -> !Modifier.isFinal(u.getModifiers()) && methodCheck.test(u)
         );
         
+        
         //add all ctors
         Arrays.stream(token.getDeclaredConstructors())
               .filter(ctorCheck)
-              .map(e -> new MethodRepresentation(header.name, e))
+              .map(e -> new MethodRepresentation(token, token.getSimpleName() + "Impl", e))
               .forEachOrdered(allMethods::add);
         
         
@@ -47,7 +49,6 @@ public class ClassRepresentation {
                                  .map(MethodRepresentation::new)
                                  .forEachOrdered(allMethods::add);
         
-        //add all public methods
         addAllToMethods.accept(token.getMethods());
         
         //add all protected
@@ -55,7 +56,16 @@ public class ClassRepresentation {
             addAllToMethods.accept(currentToken.getDeclaredMethods());
         }
         
-        methodRepresentations = allMethods.stream().distinct().toList();
+        
+        methodRepresentations = allMethods.stream()
+                                          .collect(Collectors.groupingBy(MethodRepresentation::genSignature))
+                                          .values()
+                                          .stream()
+                                          .map(representations -> representations.stream().min(
+                                                  (MethodRepresentation a, MethodRepresentation b)
+                                                           -> a.returnType.isAssignableFrom(b.returnType) ? 1 : -1)
+                                                 .orElse(null))
+                                          .collect(toList());
     }
     
     @Override
@@ -68,6 +78,6 @@ public class ClassRepresentation {
     }
     
     private String genAllMethods() {
-        return methodRepresentations.stream().map(Objects::toString).collect(Collectors.joining(""));
+        return methodRepresentations.stream().map(Objects::toString).collect(joining(""));
     }
 }

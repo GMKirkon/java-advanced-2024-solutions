@@ -14,7 +14,8 @@ public class MethodRepresentation {
     
     boolean isPrivate;
     
-    String returnType;
+    Class<?> returnType;
+    String returnTypeName;
     
     String name;
     
@@ -29,7 +30,8 @@ public class MethodRepresentation {
         if (Modifier.isPrivate(method.getReturnType().getModifiers())) {
             throw new UncheckedImplerException("private type for method result");
         }
-        returnType = method.getReturnType().getCanonicalName();
+        returnType = method.getReturnType();
+        returnTypeName = returnType.getCanonicalName();
         returnValue = genReturnValue(method);
         name = method.getName();
         arguments = ArgsResolver.resolveArguments(method.getParameters());
@@ -41,8 +43,9 @@ public class MethodRepresentation {
         }
     }
     
-    MethodRepresentation(String typeName, Constructor<?> method) {
-        returnType = typeName;
+    MethodRepresentation(Class<?> returnType, String returnTypeName, Constructor<?> method) {
+        this.returnType = returnType;
+        this.returnTypeName = returnTypeName;
         returnValue = "";
         name = "";
         arguments = ArgsResolver.resolveArguments(method.getParameters());
@@ -110,9 +113,14 @@ public class MethodRepresentation {
         return  getArgumentsRepresentation(e -> e.argumentType + " " + e.argumentName);
     }
     
+    String genSignature() {
+        return name + genArgsInSignature();
+    }
+    
     @Override
     public int hashCode() {
         return Objects.hash(
+                returnType,
                 name,
                 arguments
         );
@@ -127,7 +135,8 @@ public class MethodRepresentation {
             return false;
         }
         MethodRepresentation that = (MethodRepresentation) o;
-        return Objects.equals(name, that.name) &&
+        return Objects.equals(returnType, that.returnType) &&
+               Objects.equals(name, that.name) &&
                Objects.equals(arguments, that.arguments);
     }
     
@@ -139,7 +148,7 @@ public class MethodRepresentation {
             return String.format(
                     "%s %s %s(%s) %s { %n %s %n  return %s; %n  }%n",
                     modifier,
-                    returnType,
+                    returnTypeName,
                     name,
                     genArgsInSignature(),
                     throwModifiers,
