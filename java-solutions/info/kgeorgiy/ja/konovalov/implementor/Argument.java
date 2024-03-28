@@ -1,6 +1,7 @@
 package info.kgeorgiy.ja.konovalov.implementor;
 
 public class Argument {
+    // :NOTE: access modifiers
     String argumentType;
     String argumentName;
     

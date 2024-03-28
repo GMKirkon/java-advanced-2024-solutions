@@ -20,13 +20,15 @@ public class ClassRepresentation {
     
     public ClassRepresentation(Class<?> token) throws ImplerException {
         header = new ClassHeader(token);
+        // :NOTE: java.util.LinkedHashSet
         var allMethods = new java.util.LinkedHashSet<MethodRepresentation>();
         
-        Predicate<Executable> methodCheck = u ->
+        final Predicate<Executable> methodCheck = u ->
                 !Modifier.isPrivate(u.getModifiers()) &&
                 !Modifier.isStatic(u.getModifiers());
         
-        Predicate<Executable> ctorCheck = (
+        final Predicate<Executable> ctorCheck = (
+                // :NOTE: final constructor?
                 u -> !Modifier.isFinal(u.getModifiers()) && methodCheck.test(u)
         );
         
@@ -58,12 +60,12 @@ public class ClassRepresentation {
         
         
         methodRepresentations = allMethods.stream()
+                                        // :NOTE: groupingBy string
                                           .collect(Collectors.groupingBy(MethodRepresentation::genSignature))
                                           .values()
                                           .stream()
-                                          .map(representations -> representations.stream().min(
-                                                  (MethodRepresentation a, MethodRepresentation b)
-                                                           -> a.returnType.isAssignableFrom(b.returnType) ? 1 : -1)
+                                          .map(representations -> representations.stream()
+                                                  .min((MethodRepresentation a, MethodRepresentation b) -> a.returnType.isAssignableFrom(b.returnType) ? 1 : -1)
                                                  .orElse(null))
                                           .collect(toList());
     }
