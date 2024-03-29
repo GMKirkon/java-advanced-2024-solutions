@@ -1,82 +1,46 @@
 package info.kgeorgiy.ja.konovalov.implementor;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
-public class MethodRepresentation {
-    // :NOTE: access modifiers
-    String modifier;
+/**
+ * Specialization of {@link AbstractMethodRepresentation} for methods
+ */
+public class MethodRepresentation extends AbstractMethodRepresentation implements Comparable<MethodRepresentation> {
+    /**
+     * methods name
+     */
+    final public String name;
     
-    boolean isPrivate;
+    /**
+     * defaultValue used for return function
+     */
+    final public String defaultValue;
     
-    Class<?> returnType;
-    String returnTypeName;
-    
-    String name;
-    
-    String returnValue;
-    Collection<Argument> arguments;
-    
-    String throwModifiers;
-    String superCall;
-    
-    
-    MethodRepresentation(final Method method) {
-        if (Modifier.isPrivate(method.getReturnType().getModifiers())) {
-            throw new UncheckedImplerException("private type for method result");
-        }
-        returnType = method.getReturnType();
-        returnTypeName = returnType.getCanonicalName();
-        returnValue = genReturnValue(method);
+    /**
+     * Creates Method representation
+     * @param method method that is to be implemented
+     */
+    MethodRepresentation(Method method) {
+        super(method);
         name = method.getName();
-        arguments = ArgsResolver.resolveArguments(method.getParameters());
-        throwModifiers = genThrowNames(method.getExceptionTypes());
-        superCall = "";
-        setModifier(method.getModifiers());
-        if (Modifier.isFinal(method.getModifiers()) || !Modifier.isAbstract(method.getModifiers())) {
-            isPrivate = true;
-        }
+        defaultValue = genDefaultReturnValue(method);
     }
     
-    MethodRepresentation(final Class<?> returnType, final String returnTypeName, final Constructor<?> constructor) {
-        this.returnType = returnType;
-        this.returnTypeName = returnTypeName;
-        returnValue = "";
-        name = "";
-        arguments = ArgsResolver.resolveArguments(constructor.getParameters());
-        throwModifiers = genThrowNames(constructor.getExceptionTypes());
-        superCall = String.format("super(%s);", getArgumentsRepresentation(Argument::getArgumentName));
-        setModifier(constructor.getModifiers());
-        if (Modifier.isFinal(constructor.getModifiers())) {
-            isPrivate = true;
-        }
+    /**
+     * getter to be provided to {@link ClassRepresentation} for groupingBy
+     * @return methods name
+     */
+    public String getName() {
+        return name;
     }
     
-    void setModifier(final int modifierInt) {
-        if (Modifier.isPrivate(modifierInt)) {
-            isPrivate = true;
-            modifier = "";
-        } else {
-            isPrivate = false;
-            if (Modifier.isPublic(modifierInt)) {
-                modifier = "public";
-            } else {
-                if (Modifier.isProtected(modifierInt)) {
-                    modifier = "protected";
-                } else {
-                    modifier = "";
-                }
-            }
-        }
-    }
-    
-    String genReturnValue(final Method method) {
+    /**
+     * Generated default value that is used for provided method's return type
+     * @param method method for which the return value is being generated
+     * @return default value that can be returned from the method
+     */
+    public static String genDefaultReturnValue(final Method method) {
         if (!method.getReturnType().isPrimitive()) {
             return "null";
         } else if (method.getReturnType() == void.class) {
@@ -88,37 +52,42 @@ public class MethodRepresentation {
         }
     }
     
-    String genThrowNames(final Class<?>[] exceptions) {
-        if (exceptions.length == 0) {
+    /**
+     * @return java code for method
+     */
+    @Override
+    public String toString() {
+        if (isEmpty) {
             return "";
+        } else {
+            return String.format(
+                    "%s %s %s(%s) %s { %n return %s; %n  }%n",
+                    modifier,
+                    returnType.getCanonicalName(),
+                    name,
+                    genArgsInSignature(),
+                    throwModifiers,
+                    defaultValue
+            );
         }
-        return String.format(
-                "throws %s",
-                Arrays.stream(exceptions)
-                      .map(Class::getName)
-                      .collect(Collectors.joining(", "))
-        );
     }
     
-    
-    String getArgumentsRepresentation(final Function<Argument, String> mapper) {
-        // :NOTE: String.format("%s"
-        return String.format("%s", arguments.stream()
-                                            .map(mapper)
-                                            .collect(Collectors.joining(", ")));
-    }
-    String genSuperCall() {
-        return String.format("super(%s);", getArgumentsRepresentation(Argument::getArgumentName));
-    }
-    
-    String genArgsInSignature() {
-        return getArgumentsRepresentation(e -> e.argumentType + " " + e.argumentName);
+    /**
+     * Compares Methods by return type only. Used in {@link ClassRepresentation} in order to deduce LCA for types
+     * @param o the object to be compared.
+     * @return 0 if returnTypes are the same, 1 if returnType is lower than o.returnType, -1 otherwise
+     */
+    @Override
+    public int compareTo(MethodRepresentation o) {
+        if (returnType == o.returnType) {
+            return 0;
+        }
+        return returnType.isAssignableFrom(o.returnType) ? 1 : -1;
     }
     
-    String genSignature() {
-        return name + genArgsInSignature();
-    }
-    
+    /**
+     * @return hashcode produced by signature: return type name and arguments
+     */
     @Override
     public int hashCode() {
         return Objects.hash(
@@ -128,6 +97,10 @@ public class MethodRepresentation {
         );
     }
     
+    /**
+     * @param o other object
+     * @return true if object has the same signature in other words: returnType, name and arguments.
+     */
     @Override
     public boolean equals(final Object o) {
         if (this == o) {
@@ -136,27 +109,11 @@ public class MethodRepresentation {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        final MethodRepresentation that = (MethodRepresentation) o;
+        
+        MethodRepresentation that = (MethodRepresentation) o;
+        
         return Objects.equals(returnType, that.returnType) &&
-               Objects.equals(name, that.name) &&
-               Objects.equals(arguments, that.arguments);
-    }
-    
-    @Override
-    public String toString() {
-        if (isPrivate) {
-            return String.format("%n");
-        } else {
-            return String.format(
-                    "%s %s %s(%s) %s { %n %s %n  return %s; %n  }%n",
-                    modifier,
-                    returnTypeName,
-                    name,
-                    genArgsInSignature(),
-                    throwModifiers,
-                    superCall,
-                    returnValue
-            );
-        }
+               Objects.equals(arguments, that.arguments) &&
+               Objects.equals(name, that.name);
     }
 }
