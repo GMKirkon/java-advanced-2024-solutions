@@ -85,9 +85,9 @@ public class Implementor implements JarImpler {
     
     /**
      * <p>
-     *     {@inheritDoc}
+     * {@inheritDoc}
      * </p>
-     *
+     * <p>
      * For more implementation details see documentation to {@link #staticImplement(Class, Path)}
      */
     @Override
@@ -121,7 +121,7 @@ public class Implementor implements JarImpler {
         } catch (UncheckedImplerException e) {
             throw e.getImplerException();
         } catch (IOException | SecurityException e) {
-            throw new ImplerException(String.format("Error during writing: %s", e.getMessage()));
+            throw new IOImplerException(String.format("Error during writing: %s", e.getMessage()));
         }
     }
     
@@ -141,6 +141,7 @@ public class Implementor implements JarImpler {
     
     /**
      * Tries to create parent directory to provided root and prints warning if that is not possible
+     *
      * @param root path to which parent directories has to be created
      */
     private static void tryAccessParents(final Path root) {
@@ -156,6 +157,7 @@ public class Implementor implements JarImpler {
     
     /**
      * Prohibits to implement classes/interfaces that are private or final
+     *
      * @param token type token for class that is to be implemented by {@link #implement(Class, Path)}
      * @throws ImplerException if class/interface was final/private
      */
@@ -169,6 +171,7 @@ public class Implementor implements JarImpler {
     
     /**
      * Prohibits to implement corner-cases classes/interfaces such as primitives, enum, record
+     *
      * @param token type token for class that is to be implemented by {@link #implement(Class, Path)}
      * @throws ImplerException if provided class was primitive, or enum or a record
      */
@@ -190,24 +193,26 @@ public class Implementor implements JarImpler {
      * Signature to {@link #implement(Class, Path)} with provided writer,
      * generate the code and outputs it with writer
      * wraps possible {@link IOException} to {@link ImplerException}
-     * @param token type token for class that is to be implemented by {@link #implement(Class, Path)}
+     *
+     * @param token  type token for class that is to be implemented by {@link #implement(Class, Path)}
      * @param writer provided writer
-     * @throws ImplerException if could not output generated class or if could not generate implementation
+     * @throws ImplerException in case could not output generated class or could not generate implementation
      */
     private static void implementWithWriter(final Class<?> token, final Writer writer) throws ImplerException {
         final ClassRepresentation result = new ClassRepresentation(token);
         try {
             writer.write(result.toString());
         } catch (IOException e) {
-            throw new ImplerException(String.format("Error during printing the output %s", e.getMessage()));
+            throw new IOImplerException(String.format("Error during printing the output %s", e.getMessage()));
         }
     }
     
     /**
      * Prohibits(via throwing) private and final classes/interfaces
-     * @param modifiers modifiers got from {@code token.getModifiers()}
+     *
+     * @param modifiers       modifiers got from {@code token.getModifiers()}
      * @param inheritanceType implements or extends string to avoid copypaste
-     * @param classType interface or class string to avoid copypaste
+     * @param classType       interface or class string to avoid copypaste
      * @throws ImplerException if interface/class occurred to be final or private
      */
     private static void prohibitModifiersWithGivenString(
@@ -226,9 +231,9 @@ public class Implementor implements JarImpler {
     
     /**
      * <p>
-     *     {@inheritDoc}
+     * {@inheritDoc}
      * </p>
-     *
+     * <p>
      * For more implementation details see documentation to {@link #staticImplementJar(Class, Path)}
      */
     @Override
@@ -245,7 +250,7 @@ public class Implementor implements JarImpler {
      * inside the provided root directory
      * </p>
      *
-     * @param token class/interface that is being implemented
+     * @param token   class/interface that is being implemented
      * @param jarFile target .jar file.
      * @throws ImplerException if provided class was impossible to implement,
      *                         or could not create directories to store compiled files
@@ -258,7 +263,7 @@ public class Implementor implements JarImpler {
         try {
             buildDirectory = Files.createTempDirectory(jarFile.getParent(), "jarImplementor");
         } catch (IOException e) {
-            throw new ImplerException("Unable to create temporary directory to store compiled files", e);
+            throw new IOImplerException("Unable to create temporary directory to store compiled files " + e.getMessage());
         }
         buildDirectory.toFile().deleteOnExit();
         
@@ -271,8 +276,9 @@ public class Implementor implements JarImpler {
     /**
      * Compiles class (that is given by its {@code Class} token, that is stored at {@code root} path,
      * with provided charset
-     * @param token implemented class type token
-     * @param root path to implementations
+     *
+     * @param token   implemented class type token
+     * @param root    path to implementations
      * @param charset charset to store compiled .class file with
      * @throws ImplerException if could not find java compiler or some error occurred during compilation
      */
@@ -299,9 +305,10 @@ public class Implementor implements JarImpler {
     
     /**
      * Creates jar archive to store implementation of one provided class
-     * @param root path to directory where to search implemented .class file
+     *
+     * @param root      path to directory where to search implemented .class file
      * @param classFile path to class implementation
-     * @param jarFile target .jar file.
+     * @param jarFile   target .jar file.
      * @throws ImplerException if could not write implementation to provided jarFile
      */
     private static void createJar(final Path root, final Path classFile, final Path jarFile) throws ImplerException {
@@ -314,12 +321,16 @@ public class Implementor implements JarImpler {
             jarStream.putNextEntry(new ZipEntry(classFile.toString().replace(File.separator, "/")));
             Files.copy(root.resolve(classFile), jarStream);
         } catch (IOException e) {
-            throw new ImplerException("Error while writing to jar", e);
+            throw new IOImplerException(String.format(
+                    "Could not output to jar archive with problem : %s",
+                    e.getMessage()
+            ));
         }
     }
     
     /**
      * Magically generating classpath from class token
+     *
      * @param token class which classpath is to be got
      * @return classpath for provided class
      */
