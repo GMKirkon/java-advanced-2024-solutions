@@ -17,26 +17,26 @@ public abstract class AbstractMethodRepresentation {
     /**
      * true if method should not be implemented, false otherwise
      */
-    public boolean isEmpty;
+    protected boolean isEmpty;
     
     /**
      * access modifier for the method
      */
-    public String modifier;
+    protected String modifier;
     /**
      * method returnType class token, for constructors consider that ctor returns its new declared class
      */
-    public Class<?> returnType;
+    protected Class<?> returnType;
     
     /**
      * stores signature of a function in a collection of wrappers {@link Argument}
      */
-    public Collection<Argument> arguments;
+    protected Collection<Argument> arguments;
     
     /**
      * stores all thrown exceptions
      */
-    public String throwModifiers;
+    protected String throwModifiers;
     
     /**
      * fill all the fields of abstract method representation from a provided method

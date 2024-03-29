@@ -33,12 +33,12 @@ public class ClassRepresentation {
      * Representation of first two lines of class implementation,
      * its package and name with implemented/extended interface/class
      */
-    final ClassHeader header;
+    final private ClassHeader header;
     /**
      * Collection of signature wrapper classes {@link AbstractMethodRepresentation}
      * that is used to store all methods and ctors implementation
      */
-    final Collection<AbstractMethodRepresentation> methodRepresentations;
+    final private Collection<AbstractMethodRepresentation> methodRepresentations;
     
     
     /**
