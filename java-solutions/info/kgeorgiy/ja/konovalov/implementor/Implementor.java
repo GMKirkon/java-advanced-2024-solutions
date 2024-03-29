@@ -201,7 +201,6 @@ public class Implementor implements JarImpler {
     private static void implementWithWriter(final Class<?> token, final Writer writer) throws ImplerException {
         final ClassRepresentation result = new ClassRepresentation(token);
         try {
-            System.out.println(result);
             writer.write(result.toString());
         } catch (IOException e) {
             throw new IOImplerException(String.format("Error during printing the output %s", e.getMessage()));
