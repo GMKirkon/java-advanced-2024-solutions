@@ -64,9 +64,9 @@ public class Implementor implements JarImpler {
             } else {
                 staticImplementJar(token, root);
             }
-        } catch (ClassNotFoundException e) {
+        } catch (final ClassNotFoundException e) {
             System.err.printf("Could not find class from provided name: %s%n", e.getMessage());
-        } catch (InvalidPathException e) {
+        } catch (final InvalidPathException e) {
             System.err.printf("Invalid path to output root : %s%n", e.getMessage());
         }
     }
@@ -112,14 +112,15 @@ public class Implementor implements JarImpler {
         final Path destinationPath = root.resolve(getClassPath(token, "java")).toAbsolutePath();
         tryAccessParents(destinationPath);
         
-        try (var writer = new JavaCodeWriter(Files.newBufferedWriter(destinationPath))) {
+        try (final var writer = new JavaCodeWriter(Files.newBufferedWriter(destinationPath))) {
+            // :NOTE: too late
             prohibitModifiersFromToken(token);
             prohibitCornerClassTypes(token);
             
             implementWithWriter(token, writer);
-        } catch (UncheckedImplerException e) {
+        } catch (final UncheckedImplerException e) {
             throw e.getImplerException();
-        } catch (IOException | SecurityException e) {
+        } catch (final IOException | SecurityException e) {
             throw new IOImplerException(String.format("Error during writing: %s", e.getMessage()));
         }
     }
@@ -147,6 +148,7 @@ public class Implementor implements JarImpler {
         final Path parent = root.getParent();
         if (parent != null) {
             try {
+                // :NOTE: access
                 Files.createDirectories(parent);
             } catch (final IOException e) {
                 System.err.println("Warning, could not create parent directories to output path");
@@ -201,7 +203,7 @@ public class Implementor implements JarImpler {
         final ClassRepresentation result = new ClassRepresentation(token);
         try {
             writer.write(result.toString());
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new IOImplerException(String.format("Error during printing the output %s", e.getMessage()));
         }
     }
@@ -262,9 +264,10 @@ public class Implementor implements JarImpler {
         final Path buildDirectory;
         try {
             buildDirectory = Files.createTempDirectory(jarFile.getParent(), "jarImplementor");
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new IOImplerException("Unable to create temporary directory to store compiled files " + e.getMessage());
         }
+        // :NOTE: deleteOnExit
         buildDirectory.toFile().deleteOnExit();
         
         staticImplement(token, buildDirectory);
@@ -309,18 +312,18 @@ public class Implementor implements JarImpler {
      * @param root      path to directory where to search implemented .class file
      * @param classFile path to class implementation
      * @param jarFile   target .jar file.
-     * @throws IOImplerException if could not write implementation to provided jarFile
+     * @throws IOImplerException if cannot not write implementation to provided jarFile
      */
     private static void createJar(final Path root, final Path classFile, final Path jarFile) throws IOImplerException {
-        Manifest manifest = new Manifest();
+        final Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
         manifest.getMainAttributes().put(Attributes.Name.IMPLEMENTATION_VERSION, "1.0");
         manifest.getMainAttributes().put(Attributes.Name.IMPLEMENTATION_VENDOR, "Implementor");
         
-        try (var jarStream = new JarOutputStream(Files.newOutputStream(jarFile), manifest)) {
+        try (final var jarStream = new JarOutputStream(Files.newOutputStream(jarFile), manifest)) {
             jarStream.putNextEntry(new ZipEntry(classFile.toString().replace(File.separator, "/")));
             Files.copy(root.resolve(classFile), jarStream);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new IOImplerException(String.format(
                     "Could not output to jar archive with problem : %s",
                     e.getMessage()

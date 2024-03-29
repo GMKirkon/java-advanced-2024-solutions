@@ -46,6 +46,7 @@ public class ClassRepresentation {
      * {@link Method} or {@link Constructor}, that is type-erased to {@link Executable}
      * Checks that method/constructor is not private and is not static
      */
+    // :NOTE: CONST
     private static final Predicate<Executable> methodCheck = u ->
             !Modifier.isPrivate(u.getModifiers()) &&
             !Modifier.isStatic(u.getModifiers());
@@ -53,12 +54,12 @@ public class ClassRepresentation {
      * Function to produce wrapper classes {@link MethodRepresentation} from raw array of {@link Method}
      */
     private static final Function<Method[], Stream<MethodRepresentation>> transformAllMethods =
-            methods -> transformAll(methods).map(MethodRepresentation::new);
+            methods -> filterMethods(methods).map(MethodRepresentation::new);
     /**
      * Function to produce wrapper classes {@link ConstructorRepresentation} from raw array of {@link Constructor}
      */
     private static final Function<Constructor<?>[], Stream<ConstructorRepresentation>> transformAllCtors =
-            methods -> transformAll(methods).map(ConstructorRepresentation::new);
+            methods -> filterMethods(methods).map(ConstructorRepresentation::new);
     
     /**
      * Generic method to generate function that
@@ -85,7 +86,7 @@ public class ClassRepresentation {
      * @param <T>     {@link  Method} or {@link Constructor}
      * @return Stream consisting of only implementable functions
      */
-    private static <T extends Executable> Stream<T> transformAll(T[] methods) {
+    private static <T extends Executable> Stream<T> filterMethods(T[] methods) {
         return Arrays.stream(methods).filter(methodCheck);
     }
     
@@ -105,13 +106,15 @@ public class ClassRepresentation {
         header = new ClassHeader(token);
         var methods = new HashSet<MethodRepresentation>();
         var ctors = new HashSet<ConstructorRepresentation>();
-        
+
+        // :NOTE: simplify
         addAllMethodsToCollection(transformAllCtors, ctors::add).accept(token.getDeclaredConstructors());
         
         if (ctors.isEmpty() && !token.isInterface()) {
             throw new ImplerException("Could not implement utility class");
         }
-        
+
+        // :NOTE: stream
         addAllMethodsToCollection(transformAllMethods, methods::add).accept(token.getMethods());
         
         for (Class<?> currentToken = token; currentToken != null; currentToken = currentToken.getSuperclass()) {
@@ -122,6 +125,7 @@ public class ClassRepresentation {
                 methods.stream()
                        .collect(Collectors.groupingBy(MethodRepresentation::getName))
                        .values().stream()
+                        // :NOTE: ??
                        .flatMap(
                             representations ->
                                 representations.stream()

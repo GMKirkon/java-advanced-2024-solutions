@@ -1,5 +1,6 @@
 package info.kgeorgiy.ja.konovalov.implementor;
 
+// :NOTE: over engineering
 /**
  * Helper class to store package, classname and class/interface that is extended/implemented.
  * That is combine called Header.

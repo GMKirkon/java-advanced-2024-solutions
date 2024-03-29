@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+// :NOTE: access modifiers
 /**
  *  Helper class to store constructions/methods
  */
@@ -48,7 +49,7 @@ public abstract class AbstractMethodRepresentation {
         }
         
         returnType = method.getReturnType();
-        setSignatureAndThrowModifiers(method);
+        setSignatureAndThrows(method);
         
         if (Modifier.isFinal(method.getModifiers()) || !Modifier.isAbstract(method.getModifiers())) {
             isEmpty = true;
@@ -62,7 +63,7 @@ public abstract class AbstractMethodRepresentation {
     AbstractMethodRepresentation(final Constructor<?> ctor) {
         returnType = ctor.getDeclaringClass();
         
-        setSignatureAndThrowModifiers(ctor);
+        setSignatureAndThrows(ctor);
     }
     
     /**
@@ -80,7 +81,7 @@ public abstract class AbstractMethodRepresentation {
      * @param exceptions class tokens for thrown exceptions
      * @return string starting with "throws" and then followed by all thrown exceptions, comma-separated
      */
-    protected static String genThrowNames(final Class<?>[] exceptions) {
+    protected static String genThrows(final Class<?>[] exceptions) {
         if (exceptions.length == 0) {
             return "";
         }
@@ -119,9 +120,9 @@ public abstract class AbstractMethodRepresentation {
      * Generates {@code arguments} {@code throwModifiers} {@code modifier}
      * @param method ctor or method, that are implemented
      */
-    protected void setSignatureAndThrowModifiers(final Executable method) {
+    private void setSignatureAndThrows(final Executable method) {
         arguments = resolveArguments(method.getParameters());
-        throwModifiers = genThrowNames(method.getExceptionTypes());
+        throwModifiers = genThrows(method.getExceptionTypes());
         setModifier(method.getModifiers());
     }
     
