@@ -106,14 +106,14 @@ public class Implementor implements JarImpler {
      * @param token class/interface that is being implemented
      * @param root  path to root directory where to store the implementation
      * @throws ImplerException if provided class was impossible to implement,
-     *                         or could not write the implementation to the destination
+     * @throws IOImplerException if could not write the implementation to the destination
      * @see #implement(Class, Path)
      */
     public static void staticImplement(final Class<?> token, final Path root) throws ImplerException {
         final Path destinationPath = root.resolve(getClassPath(token, "java")).toAbsolutePath();
         tryAccessParents(destinationPath);
         
-        try (var writer = Files.newBufferedWriter(destinationPath)) {
+        try (var writer = new JavaCodeWriter(Files.newBufferedWriter(destinationPath))) {
             prohibitModifiersFromToken(token);
             prohibitCornerClassTypes(token);
             
@@ -201,6 +201,7 @@ public class Implementor implements JarImpler {
     private static void implementWithWriter(final Class<?> token, final Writer writer) throws ImplerException {
         final ClassRepresentation result = new ClassRepresentation(token);
         try {
+            System.out.println(result);
             writer.write(result.toString());
         } catch (IOException e) {
             throw new IOImplerException(String.format("Error during printing the output %s", e.getMessage()));
@@ -253,8 +254,9 @@ public class Implementor implements JarImpler {
      * @param token   class/interface that is being implemented
      * @param jarFile target .jar file.
      * @throws ImplerException if provided class was impossible to implement,
-     *                         or could not create directories to store compiled files
-     *                         or could not write the implementation to the destination
+     *
+     * @throws IOImplerException if could not create directories to store compiled files
+     *                           or could not write the implementation to the destination
      * @see #implement(Class, Path)
      * @see #implementJar(Class, Path)
      */
@@ -309,9 +311,9 @@ public class Implementor implements JarImpler {
      * @param root      path to directory where to search implemented .class file
      * @param classFile path to class implementation
      * @param jarFile   target .jar file.
-     * @throws ImplerException if could not write implementation to provided jarFile
+     * @throws IOImplerException if could not write implementation to provided jarFile
      */
-    private static void createJar(final Path root, final Path classFile, final Path jarFile) throws ImplerException {
+    private static void createJar(final Path root, final Path classFile, final Path jarFile) throws IOImplerException {
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
         manifest.getMainAttributes().put(Attributes.Name.IMPLEMENTATION_VERSION, "1.0");
