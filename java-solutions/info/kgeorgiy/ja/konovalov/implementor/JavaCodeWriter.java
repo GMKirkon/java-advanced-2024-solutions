@@ -11,14 +11,14 @@ public class JavaCodeWriter extends Writer {
     /**
      * Actual writer used to output the result
      */
-    Writer writer;
+    private final Writer writer;
     
     
     /**
      * Creates JavaCodeWriter from a provided writer
      * @param writer actual writer to shadow
      */
-    public JavaCodeWriter(Writer writer) {
+    public JavaCodeWriter(final Writer writer) {
         this.writer = writer;
     }
     
@@ -36,7 +36,7 @@ public class JavaCodeWriter extends Writer {
      * @throws IOException if cannot output the result
      */
     @Override
-    public void write(char[] cbuf, int off, int len) throws IOException {
+    public void write(final char[] cbuf, final int off, final int len) throws IOException {
         for (int i = 0; i < len; ++i) {
             char current = cbuf[off + i];
             if (current >= 128) {

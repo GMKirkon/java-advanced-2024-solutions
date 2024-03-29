@@ -331,7 +331,6 @@ public class Implementor implements JarImpler {
     
     /**
      * Magically generating classpath from class token
-     *
      * @param token class which classpath is to be got
      * @return classpath for provided class
      */
