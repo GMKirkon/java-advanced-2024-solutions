@@ -73,7 +73,6 @@ public class Implementor implements JarImpler {
     
     /**
      * signature method used to print how main should be used
-     *
      * @see #main(String...)
      */
     private static void printUsagePattern() {

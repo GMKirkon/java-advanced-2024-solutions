@@ -5,6 +5,7 @@ import java.io.Writer;
 
 /**
  * Helper class to write all .java files with implicitly writing unicode symbols to .java
+ * used by {@link Implementor}
  */
 public class JavaCodeWriter extends Writer {
     

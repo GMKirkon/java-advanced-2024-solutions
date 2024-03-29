@@ -26,7 +26,7 @@ public class ConstructorRepresentation extends AbstractMethodRepresentation {
     @Override
     public String toString() {
         if (isEmpty) {
-            return String.format("%n");
+            return "";
         } else {
             return String.format(
                     "%s %s(%s) %s { %n %s %n return; %n  }%n",
