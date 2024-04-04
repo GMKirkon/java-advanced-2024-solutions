@@ -5,12 +5,14 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-// :NOTE: access modifiers
 /**
  *  Helper class to store constructions/methods
  */
@@ -32,7 +34,7 @@ public abstract class AbstractMethodRepresentation {
     /**
      * stores signature of a function in a collection of wrappers {@link Argument}
      */
-    protected Collection<Argument> arguments;
+    protected List<Argument> arguments;
     
     /**
      * stores all thrown exceptions
@@ -71,7 +73,7 @@ public abstract class AbstractMethodRepresentation {
      * @param parameters parameters that are inside function signature
      * @return collection of wrapped in {@link Argument} functions arguments
      */
-    protected static Collection<Argument> resolveArguments(final Parameter... parameters) {
+    private static List<Argument> resolveArguments(final Parameter... parameters) {
         return Arrays.stream(parameters).map(Argument::new).collect(Collectors.toList());
     }
     
@@ -81,7 +83,7 @@ public abstract class AbstractMethodRepresentation {
      * @param exceptions class tokens for thrown exceptions
      * @return string starting with "throws" and then followed by all thrown exceptions, comma-separated
      */
-    protected static String genThrows(final Class<?>[] exceptions) {
+    private static String genThrows(final Class<?>[] exceptions) {
         if (exceptions.length == 0) {
             return "";
         }
@@ -98,7 +100,7 @@ public abstract class AbstractMethodRepresentation {
      * Resolves access modifier to the method
      * @param modifierInt int from token.getModifiers() for current method
      */
-    protected void setModifier(final int modifierInt) {
+    private void setModifier(final int modifierInt) {
         if (Modifier.isPrivate(modifierInt)) {
             isEmpty = true;
             modifier = "";
@@ -121,7 +123,7 @@ public abstract class AbstractMethodRepresentation {
      * @param method ctor or method, that are implemented
      */
     private void setSignatureAndThrows(final Executable method) {
-        arguments = resolveArguments(method.getParameters());
+        arguments = (resolveArguments(method.getParameters())) ;
         throwModifiers = genThrows(method.getExceptionTypes());
         setModifier(method.getModifiers());
     }

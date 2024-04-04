@@ -2,6 +2,7 @@ package info.kgeorgiy.ja.konovalov.implementor;
 
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.util.Objects;
 
 /**
  * Helper class to store single argument from method signature.
@@ -9,7 +10,6 @@ import java.lang.reflect.Parameter;
  * @param parameter stored parameter used to know type and name of argument
  */
 public record Argument(Parameter parameter) {
-    
     
     /**
      * Creates Argument from given parameter
@@ -48,5 +48,21 @@ public record Argument(Parameter parameter) {
      */
     public String getArgumentName() {
         return parameter.getName();
+    }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Argument argument = (Argument) o;
+        return Objects.equals(parameter.getType(), argument.parameter.getType());
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(parameter.getType());
     }
 }

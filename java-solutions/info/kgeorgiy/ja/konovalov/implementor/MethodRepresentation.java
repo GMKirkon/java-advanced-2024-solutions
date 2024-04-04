@@ -10,15 +10,16 @@ public class MethodRepresentation extends AbstractMethodRepresentation implement
     /**
      * methods name
      */
-    final public String name;
+    final private String name;
     
     /**
      * defaultValue used for return function
      */
-    final public String defaultValue;
+    final private String defaultValue;
     
     /**
      * Creates Method representation
+     *
      * @param method method that is to be implemented
      */
     MethodRepresentation(Method method) {
@@ -28,19 +29,12 @@ public class MethodRepresentation extends AbstractMethodRepresentation implement
     }
     
     /**
-     * getter to be provided to {@link ClassRepresentation} for groupingBy
-     * @return methods name
-     */
-    public String getName() {
-        return name;
-    }
-    
-    /**
      * Generated default value that is used for provided method's return type
+     *
      * @param method method for which the return value is being generated
      * @return default value that can be returned from the method
      */
-    public static String genDefaultReturnValue(final Method method) {
+    private static String genDefaultReturnValue(final Method method) {
         if (!method.getReturnType().isPrimitive()) {
             return "null";
         } else if (method.getReturnType() == void.class) {
@@ -53,32 +47,29 @@ public class MethodRepresentation extends AbstractMethodRepresentation implement
     }
     
     /**
-     * @return java code for method
+     * getter to be provided to {@link ClassGenerator} for groupingBy
+     *
+     * @return methods name
      */
-    @Override
-    public String toString() {
-        if (isEmpty) {
-            return "";
-        } else {
-            return String.format(
-                    "%s %s %s(%s) %s { %n return %s; %n  }%n",
-                    modifier,
-                    returnType.getCanonicalName(),
-                    name,
-                    genArgsInSignature(),
-                    throwModifiers,
-                    defaultValue
-            );
-        }
+    String getName() {
+        return name;
     }
     
     /**
-     * Compares Methods by return type only. Used in {@link ClassRepresentation} in order to deduce LCA for types
+     * Compares Methods by return type only. Used in {@link ClassGenerator} in order to deduce LCA for types
+     *
      * @param o the object to be compared.
      * @return 0 if returnTypes are the same, 1 if returnType is lower than o.returnType, -1 otherwise
      */
     @Override
     public int compareTo(MethodRepresentation o) {
+        /* Could be used for debug, that is slow, so it is commented
+        * #IFDEF(DEBUG)
+        if (!arguments.equals(o.arguments)) {
+            throw new AssertionError("cannot compare two methods with different signature");
+        }
+        */
+        
         if (returnType == o.returnType) {
             return 0;
         }
@@ -112,8 +103,27 @@ public class MethodRepresentation extends AbstractMethodRepresentation implement
         
         MethodRepresentation that = (MethodRepresentation) o;
         
-        return Objects.equals(returnType, that.returnType) &&
-               Objects.equals(arguments, that.arguments) &&
+        return Objects.equals(arguments, that.arguments) &&
                Objects.equals(name, that.name);
+    }
+    
+    /**
+     * @return java code for method
+     */
+    @Override
+    public String toString() {
+        if (isEmpty) {
+            return "";
+        } else {
+            return String.format(
+                    "%s %s %s(%s) %s { %n return %s; %n  }%n",
+                    modifier,
+                    returnType.getCanonicalName(),
+                    name,
+                    genArgsInSignature(),
+                    throwModifiers,
+                    defaultValue
+            );
+        }
     }
 }

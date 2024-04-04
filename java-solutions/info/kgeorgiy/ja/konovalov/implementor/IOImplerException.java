@@ -3,8 +3,8 @@ package info.kgeorgiy.ja.konovalov.implementor;
 import info.kgeorgiy.java.advanced.implementor.ImplerException;
 
 /**
- * Helper exception to separate exception hierarchy.
- * Indicates that the problem in {@link Implementor} happened due to IO
+ * Represents an exception that occurs during IO operations in the {@link Implementor} class.
+ * Extends the {@link ImplerException} class.
  */
 public class IOImplerException extends ImplerException {
     /**

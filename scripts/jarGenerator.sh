@@ -1,12 +1,9 @@
-# :NOTE: cd .... ; pwd
-path=$(cd ..; pwd)
-path_to_shared_code=$(cd ../../java-advanced-2024; pwd)
+path=..
+path_to_shared_code=../../java-advanced-2024
 
-shared_implementor="$path_to_shared_code"/modules/info.kgeorgiy.java.advanced.implementor
-# :NOTE: Do not compile GK's code
-javac -d "$(pwd)" \
-  "$path"/java-solutions/info/kgeorgiy/ja/konovalov/implementor/Implementor.java\
-  -cp "$path/java-solutions:$shared_implementor"
+javac -d . \
+  -classpath "$path_to_shared_code/artifacts/info.kgeorgiy.java.advanced.implementor.jar:$path/java-solutions" \
+  "$path"/java-solutions/info/kgeorgiy/ja/konovalov/implementor/Implementor.java
 
-jar cfm ../buildDirectory/Implementor.jar MANIFEST.MF info
-rm -r info
+jar cfm Implementor.jar MANIFEST.MF info
+rm -rf info

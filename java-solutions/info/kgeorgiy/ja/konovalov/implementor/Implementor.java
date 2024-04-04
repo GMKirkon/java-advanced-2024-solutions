@@ -7,7 +7,6 @@ import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import java.io.File;
 import java.io.IOException;
-import java.io.Writer;
 import java.lang.reflect.Modifier;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -19,12 +18,15 @@ import java.util.Objects;
 import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
 
 /**
  * Class that creates default implementations of java classes/interfaces and its compressed .jar representations
  * from a provided {@link Class}
+ * <p>
+ * {@link JarImpler}
  *
  * @see #implement(Class, Path)
  * @see #implementJar(Class, Path)
@@ -73,6 +75,7 @@ public class Implementor implements JarImpler {
     
     /**
      * signature method used to print how main should be used
+     *
      * @see #main(String...)
      */
     private static void printUsagePattern() {
@@ -80,18 +83,6 @@ public class Implementor implements JarImpler {
         System.err.println("Usages:");
         System.err.println("<className> <output root directory path>");
         System.err.println("-jar <className> <file>.jar");
-    }
-    
-    /**
-     * <p>
-     * {@inheritDoc}
-     * </p>
-     * <p>
-     * For more implementation details see documentation to {@link #staticImplement(Class, Path)}
-     */
-    @Override
-    public void implement(final Class<?> token, final Path root) throws ImplerException {
-        staticImplement(token, root);
     }
     
     /**
@@ -104,56 +95,68 @@ public class Implementor implements JarImpler {
      *
      * @param token class/interface that is being implemented
      * @param root  path to root directory where to store the implementation
-     * @throws ImplerException if provided class was impossible to implement,
+     * @throws ImplerException   if provided class was impossible to implement,
      * @throws IOImplerException if could not write the implementation to the destination
      * @see #implement(Class, Path)
      */
     public static void staticImplement(final Class<?> token, final Path root) throws ImplerException {
-        final Path destinationPath = root.resolve(getClassPath(token, "java")).toAbsolutePath();
-        tryAccessParents(destinationPath);
+        prohibitModifiersFromToken(token);
+        prohibitCornerClassTypes(token);
         
-        try (final var writer = new JavaCodeWriter(Files.newBufferedWriter(destinationPath))) {
-            // :NOTE: too late
-            prohibitModifiersFromToken(token);
-            prohibitCornerClassTypes(token);
-            
-            implementWithWriter(token, writer);
-        } catch (final UncheckedImplerException e) {
-            throw e.getImplerException();
-        } catch (final IOException | SecurityException e) {
-            throw new IOImplerException(String.format("Error during writing: %s", e.getMessage()));
-        }
-    }
-    
-    
-    /**
-     * Generates actual java path for class
-     *
-     * @param token     type token for implemented/extended interface/class
-     * @param extension .java or .class
-     * @return Path that refers to needed implementation class
-     */
-    private static Path getClassPath(final Class<?> token, final String extension) {
-        return Path.of(token.getPackageName().replace(".", File.separator))
-                   .resolve(token.getSimpleName() + "Impl." + extension);
-    }
-    
-    
-    /**
-     * Tries to create parent directory to provided root and prints warning if that is not possible
-     *
-     * @param root path to which parent directories has to be created
-     */
-    private static void tryAccessParents(final Path root) {
-        final Path parent = root.getParent();
-        if (parent != null) {
-            try {
-                // :NOTE: access
-                Files.createDirectories(parent);
-            } catch (final IOException e) {
-                System.err.println("Warning, could not create parent directories to output path");
+        final Path destinationPath = root.resolve(getClassPath(token, "java")).toAbsolutePath();
+        tryCreateParents(destinationPath);
+        
+        try {
+            String result = ClassGenerator.generateClassImplementation(token);
+            try (final var writer = Files.newBufferedWriter(destinationPath)) {
+                writer.write(transformToUnicode(result));
+            } catch (final IOException | SecurityException e) {
+                throw new IOImplerException(String.format("Error during writing: %s", e.getMessage()));
             }
+        } catch (UncheckedImplerException e) {
+            throw e.getImplerException();
         }
+    }
+    
+    /**
+     * Transforms the given implementation code to Unicode escape sequences for characters outside the ASCII range.
+     *
+     * @param implementationCode the implementation code to transform
+     * @return the transformed implementation code
+     */
+    private static String transformToUnicode(String implementationCode) {
+        return implementationCode.chars()
+                                 .mapToObj(c -> c >= 128 ? String.format("\\u%04X", c) : String.valueOf((char) c))
+                                 .collect(Collectors.joining());
+    }
+    
+    /**
+     * Actual implementation for {@link Implementor#implementJar(Class, Path)}
+     * <p>
+     * Creates basic implementation for class that is provided by {@code token}
+     * stores it to temporally created directory, then created jar archive that is stored to the provided
+     * inside the provided root directory
+     * </p>
+     *
+     * @param token   class/interface that is being implemented
+     * @param jarFile target .jar file.
+     * @throws ImplerException   if provided class was impossible to implement,
+     * @throws IOImplerException if could not create directories to store compiled files
+     *                           or could not write the implementation to the destination
+     * @see #implement(Class, Path)
+     * @see #implementJar(Class, Path)
+     */
+    public static void staticImplementJar(final Class<?> token, final Path jarFile) throws ImplerException {
+        final Path buildDirectory;
+        try {
+            buildDirectory = Files.createTempDirectory(jarFile.getParent(), "jarImplementor");
+        } catch (final IOException e) {
+            throw new IOImplerException("Unable to create temporary directory to store compiled files " + e.getMessage());
+        }
+        
+        staticImplement(token, buildDirectory);
+        compile(token, buildDirectory, StandardCharsets.UTF_8);
+        createJar(buildDirectory, getClassPath(token, "class"), jarFile);
     }
     
     /**
@@ -163,10 +166,18 @@ public class Implementor implements JarImpler {
      * @throws ImplerException if class/interface was final/private
      */
     private static void prohibitModifiersFromToken(final Class<?> token) throws ImplerException {
-        if (token.isInterface()) {
-            prohibitModifiersWithGivenString(token.getModifiers(), "implement", "interface");
-        } else {
-            prohibitModifiersWithGivenString(token.getModifiers(), "extend", "class");
+        int modifiers = token.getModifiers();
+        if (Modifier.isPrivate(modifiers)) {
+            throw new ImplerException(String.format(
+                    "Cannot generate implementation for private class %s",
+                    token.getCanonicalName()
+            ));
+        }
+        if (Modifier.isFinal(modifiers)) {
+            throw new ImplerException(String.format(
+                    "Cannot generate implementation for final class %s",
+                    token.getCanonicalName()
+            ));
         }
     }
     
@@ -191,90 +202,32 @@ public class Implementor implements JarImpler {
     }
     
     /**
-     * Signature to {@link #implement(Class, Path)} with provided writer,
-     * generate the code and outputs it with writer
-     * wraps possible {@link IOException} to {@link ImplerException}
+     * Generates actual java path for class
      *
-     * @param token  type token for class that is to be implemented by {@link #implement(Class, Path)}
-     * @param writer provided writer
-     * @throws ImplerException in case could not output generated class or could not generate implementation
+     * @param token     type token for implemented/extended interface/class
+     * @param extension .java or .class
+     * @return Path that refers to needed implementation class
      */
-    private static void implementWithWriter(final Class<?> token, final Writer writer) throws ImplerException {
-        final ClassRepresentation result = new ClassRepresentation(token);
-        try {
-            writer.write(result.toString());
-        } catch (final IOException e) {
-            throw new IOImplerException(String.format("Error during printing the output %s", e.getMessage()));
-        }
+    private static Path getClassPath(final Class<?> token, final String extension) {
+        return Path.of(token.getPackageName().replace(".", File.separator))
+                   .resolve(token.getSimpleName() + "Impl." + extension);
     }
     
     /**
-     * Prohibits(via throwing) private and final classes/interfaces
+     * A utility method used to generate the directory structure (parent directories) for a given path.
      *
-     * @param modifiers       modifiers got from {@code token.getModifiers()}
-     * @param inheritanceType implements or extends string to avoid copypaste
-     * @param classType       interface or class string to avoid copypaste
-     * @throws ImplerException if interface/class occurred to be final or private
+     * @param root target path for which directories need to be created
      */
-    private static void prohibitModifiersWithGivenString(
-            final int modifiers,
-            final String inheritanceType,
-            final String classType
-    ) throws ImplerException {
-        if (Modifier.isPrivate(modifiers)) {
-            throw new ImplerException(String.format("Cannot %s private %s", inheritanceType, classType));
-        }
-        if (Modifier.isFinal(modifiers)) {
-            throw new ImplerException(String.format("Cannot %s final %s", inheritanceType, classType));
+    private static void tryCreateParents(final Path root) {
+        final Path parent = root.getParent();
+        if (parent != null) {
+            try {
+                Files.createDirectories(parent);
+            } catch (final IOException e) {
+                System.err.println("Warning, could not create parent directories to output path");
+            }
         }
     }
-    
-    
-    /**
-     * <p>
-     * {@inheritDoc}
-     * </p>
-     * <p>
-     * For more implementation details see documentation to {@link #staticImplementJar(Class, Path)}
-     */
-    @Override
-    public void implementJar(final Class<?> token, final Path jarFile) throws ImplerException {
-        staticImplementJar(token, jarFile);
-    }
-    
-    
-    /**
-     * Actual implementation for {@link Implementor#implementJar(Class, Path)}
-     * <p>
-     * Creates basic implementation for class that is provided by {@code token}
-     * stores it to temporally created directory, then created jar archive that is stored to the provided
-     * inside the provided root directory
-     * </p>
-     *
-     * @param token   class/interface that is being implemented
-     * @param jarFile target .jar file.
-     * @throws ImplerException if provided class was impossible to implement,
-     *
-     * @throws IOImplerException if could not create directories to store compiled files
-     *                           or could not write the implementation to the destination
-     * @see #implement(Class, Path)
-     * @see #implementJar(Class, Path)
-     */
-    public static void staticImplementJar(final Class<?> token, final Path jarFile) throws ImplerException {
-        final Path buildDirectory;
-        try {
-            buildDirectory = Files.createTempDirectory(jarFile.getParent(), "jarImplementor");
-        } catch (final IOException e) {
-            throw new IOImplerException("Unable to create temporary directory to store compiled files " + e.getMessage());
-        }
-        // :NOTE: deleteOnExit
-        buildDirectory.toFile().deleteOnExit();
-        
-        staticImplement(token, buildDirectory);
-        compile(token, buildDirectory, StandardCharsets.UTF_8);
-        createJar(buildDirectory, getClassPath(token, "class"), jarFile);
-    }
-    
     
     /**
      * Compiles class (that is given by its {@code Class} token, that is stored at {@code root} path,
@@ -333,6 +286,7 @@ public class Implementor implements JarImpler {
     
     /**
      * Magically generating classpath from class token
+     *
      * @param token class which classpath is to be got
      * @return classpath for provided class
      */
@@ -342,5 +296,29 @@ public class Implementor implements JarImpler {
         } catch (final URISyntaxException e) {
             throw new AssertionError(e);
         }
+    }
+    
+    /**
+     * <p>
+     * {@inheritDoc}
+     * </p>
+     * <p>
+     * For more implementation details see documentation to {@link #staticImplement(Class, Path)}
+     */
+    @Override
+    public void implement(final Class<?> token, final Path root) throws ImplerException {
+        staticImplement(token, root);
+    }
+    
+    /**
+     * <p>
+     * {@inheritDoc}
+     * </p>
+     * <p>
+     * For more implementation details see documentation to {@link #staticImplementJar(Class, Path)}
+     */
+    @Override
+    public void implementJar(final Class<?> token, final Path jarFile) throws ImplerException {
+        staticImplementJar(token, jarFile);
     }
 }

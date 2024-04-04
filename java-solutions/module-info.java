@@ -8,6 +8,7 @@
 module info.kgeorgiy.ja.konovalov {
     requires info.kgeorgiy.java.advanced.student;
     requires info.kgeorgiy.java.advanced.implementor;
+    requires info.kgeorgiy.java.advanced.iterative;
     
     requires java.compiler;
 }
