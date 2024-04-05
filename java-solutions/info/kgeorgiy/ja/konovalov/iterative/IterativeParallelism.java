@@ -232,12 +232,20 @@ public class IterativeParallelism implements AdvancedIP {
     
     @Override
     public <T> T reduce(int threads, List<T> values, T identity, BinaryOperator<T> operator, int step) throws InterruptedException {
-        return parallelize(threads, new SteppedList<>(values, step), new Operation<>(()-> identity, operator), operator);
+        return parallelize(threads,
+                           new SteppedList<>(values, step),
+                           new Operation<>(()-> identity, operator),
+                           operator);
     }
     
     @Override
     public <T, R> R mapReduce(int threads, List<T> values, Function<T, R> lift, R identity, BinaryOperator<R> operator, int step) throws InterruptedException {
-        return parallelize(threads, new SteppedList<>(values, step), new Operation<>(()-> identity, (a, b) -> operator.apply(a, lift.apply(b))), operator);
+        return parallelize(
+                threads,
+                new SteppedList<>(values, step),
+                new Operation<>(() -> identity, (a, b) -> operator.apply(a, lift.apply(b))),
+                operator
+        );
     }
 }
 
