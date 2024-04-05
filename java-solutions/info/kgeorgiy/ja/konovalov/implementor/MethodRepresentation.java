@@ -52,6 +52,7 @@ public class MethodRepresentation extends AbstractMethodRepresentation implement
      */
     @Override
     public int compareTo(MethodRepresentation o) {
+        // :NOTE: not consistent with equals
         /* Could be used for debug, that is slow, so it is commented
         * #IFDEF(DEBUG)
         if (!arguments.equals(o.arguments)) {
