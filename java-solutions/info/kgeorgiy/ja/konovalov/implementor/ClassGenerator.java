@@ -15,14 +15,14 @@ import java.util.stream.Stream;
 public final class ClassGenerator {
     
     /**
-     * Predicated used to determine whether it is possible to implement {@link Method}
+     * Predicate that determines whether it is possible to implement {@link Method}
      * Checks that method is not private and is not static
      */
     private static final Predicate<Method> METHOD_CHECK = u ->
             !Modifier.isPrivate(u.getModifiers()) &&
             !Modifier.isStatic(u.getModifiers());
     /**
-     * Predicated used to determine whether it is possible to implement {@link Constructor}
+     * Predicate that determines whether it is possible to implement {@link Constructor}
      * Checks that method is not private
      */
     private static final Predicate<Constructor<?>> CTORS_CHECK = u ->

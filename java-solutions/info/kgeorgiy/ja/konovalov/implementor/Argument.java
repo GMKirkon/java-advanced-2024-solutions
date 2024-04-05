@@ -41,7 +41,6 @@ public record Argument(Parameter parameter) {
         return parameter.getType().getCanonicalName();
     }
     
-    
     /**
      * returns full argument name.
      * @return parameters argument name that is typically arg0, arg1... arg#N, where N is the position in signature

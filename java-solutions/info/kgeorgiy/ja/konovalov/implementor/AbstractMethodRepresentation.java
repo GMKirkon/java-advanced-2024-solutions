@@ -69,16 +69,6 @@ public abstract class AbstractMethodRepresentation {
     }
     
     /**
-     * Generates collection of arguments from array parameters
-     * @param parameters parameters that are inside function signature
-     * @return collection of wrapped in {@link Argument} functions arguments
-     */
-    private static List<Argument> resolveArguments(final Parameter... parameters) {
-        return Arrays.stream(parameters).map(Argument::new).collect(Collectors.toList());
-    }
-    
-    
-    /**
      * Generates throwing modifier
      * @return string starting with "throws" and then followed by all thrown exceptions, comma-separated
      */
@@ -122,7 +112,7 @@ public abstract class AbstractMethodRepresentation {
      * Generates {@code arguments} {@code modifier}
      */
     protected final void setSignature() {
-        arguments = (resolveArguments(clazz.getParameters()));
+        arguments = Arrays.stream(clazz.getParameters()).map(Argument::new).collect(Collectors.toList());
         setModifier(clazz.getModifiers());
     }
     

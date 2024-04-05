@@ -42,7 +42,7 @@ public class Implementor implements JarImpler {
     }
     
     /**
-     * Method to use outside of Java to acces {@link #implement(Class, Path)} and {@link #implementJar(Class, Path)}
+     * Method to use outside of Java to access {@link #implement(Class, Path)} and {@link #implementJar(Class, Path)}
      * use with two parameters for the first option
      * and with three parameters, first of which being "-jar" to access the second one.
      *
