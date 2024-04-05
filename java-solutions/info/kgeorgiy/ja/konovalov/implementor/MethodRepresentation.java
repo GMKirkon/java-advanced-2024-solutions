@@ -7,15 +7,7 @@ import java.util.Objects;
  * Specialization of {@link AbstractMethodRepresentation} for methods
  */
 public class MethodRepresentation extends AbstractMethodRepresentation implements Comparable<MethodRepresentation> {
-    /**
-     * methods name
-     */
-    final private String name;
     
-    /**
-     * defaultValue used for return function
-     */
-    final private String defaultValue;
     
     /**
      * Creates Method representation
@@ -24,8 +16,6 @@ public class MethodRepresentation extends AbstractMethodRepresentation implement
      */
     MethodRepresentation(Method method) {
         super(method);
-        name = method.getName();
-        defaultValue = genDefaultReturnValue(method);
     }
     
     /**
@@ -52,12 +42,11 @@ public class MethodRepresentation extends AbstractMethodRepresentation implement
      * @return methods name
      */
     String getName() {
-        return name;
+        return clazz.getName();
     }
     
     /**
-     * Compares Methods by return type only. Used in {@link ClassGenerator} in order to deduce LCA for types
-     *
+     * Compares Methods by return type only. Should be used on methods with same signature only!
      * @param o the object to be compared.
      * @return 0 if returnTypes are the same, 1 if returnType is lower than o.returnType, -1 otherwise
      */
@@ -83,7 +72,7 @@ public class MethodRepresentation extends AbstractMethodRepresentation implement
     public int hashCode() {
         return Objects.hash(
                 returnType,
-                name,
+                clazz.getName(),
                 arguments
         );
     }
@@ -104,7 +93,7 @@ public class MethodRepresentation extends AbstractMethodRepresentation implement
         MethodRepresentation that = (MethodRepresentation) o;
         
         return Objects.equals(arguments, that.arguments) &&
-               Objects.equals(name, that.name);
+               Objects.equals(getName(), that.getName());
     }
     
     /**
@@ -119,10 +108,10 @@ public class MethodRepresentation extends AbstractMethodRepresentation implement
                     "%s %s %s(%s) %s { %n return %s; %n  }%n",
                     modifier,
                     returnType.getCanonicalName(),
-                    name,
+                    getName(),
                     genArgsInSignature(),
-                    throwModifiers,
-                    defaultValue
+                    genThrows(),
+                    genDefaultReturnValue((Method) clazz)
             );
         }
     }

@@ -6,10 +6,6 @@ import java.lang.reflect.Constructor;
  * Specialization of {@link AbstractMethodRepresentation} for constructors
  */
 public class ConstructorRepresentation extends AbstractMethodRepresentation {
-    /**
-     * Constructor token used to store class
-     */
-    private final Constructor<?> ctor;
     
     /**
      * Creates ConstructorRepresentation
@@ -17,7 +13,6 @@ public class ConstructorRepresentation extends AbstractMethodRepresentation {
      */
     ConstructorRepresentation(Constructor<?> ctor) {
         super(ctor);
-        this.ctor = ctor;
     }
     
     /**
@@ -31,11 +26,14 @@ public class ConstructorRepresentation extends AbstractMethodRepresentation {
             return String.format(
                     "%s %s(%s) %s { %n %s %n return; %n  }%n",
                     modifier,
-                    ctor.getDeclaringClass().getSimpleName() + "Impl",
+                    clazz.getDeclaringClass().getSimpleName() + "Impl",
                     genArgsInSignature(),
-                    throwModifiers,
+                    genThrows(),
                     String.format("super(%s);", getArgumentsRepresentation(Argument::getArgumentName))
             );
         }
     }
+    
+    
 }
+

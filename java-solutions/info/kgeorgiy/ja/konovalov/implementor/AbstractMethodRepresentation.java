@@ -5,11 +5,8 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -26,10 +23,6 @@ public abstract class AbstractMethodRepresentation {
      * access modifier for the method
      */
     protected String modifier;
-    /**
-     * method returnType class token, for constructors consider that ctor returns its new declared class
-     */
-    protected Class<?> returnType;
     
     /**
      * stores signature of a function in a collection of wrappers {@link Argument}
@@ -37,9 +30,14 @@ public abstract class AbstractMethodRepresentation {
     protected List<Argument> arguments;
     
     /**
-     * stores all thrown exceptions
+     * method returnType class token, for constructors consider that ctor returns its new declared class
      */
-    protected String throwModifiers;
+    protected final Class<?> returnType;
+    
+    /**
+     * Represents an Executable object, that is being represented
+     */
+    protected final Executable clazz;
     
     /**
      * fill all the fields of abstract method representation from a provided method
@@ -50,8 +48,9 @@ public abstract class AbstractMethodRepresentation {
             throw new UncheckedImplerException("private type for method result");
         }
         
+        clazz = method;
         returnType = method.getReturnType();
-        setSignatureAndThrows(method);
+        setSignature();
         
         if (Modifier.isFinal(method.getModifiers()) || !Modifier.isAbstract(method.getModifiers())) {
             isEmpty = true;
@@ -64,8 +63,9 @@ public abstract class AbstractMethodRepresentation {
      */
     AbstractMethodRepresentation(final Constructor<?> ctor) {
         returnType = ctor.getDeclaringClass();
+        clazz = ctor;
         
-        setSignatureAndThrows(ctor);
+        setSignature();
     }
     
     /**
@@ -80,10 +80,11 @@ public abstract class AbstractMethodRepresentation {
     
     /**
      * Generates throwing modifier
-     * @param exceptions class tokens for thrown exceptions
      * @return string starting with "throws" and then followed by all thrown exceptions, comma-separated
      */
-    private static String genThrows(final Class<?>[] exceptions) {
+    protected final String genThrows() {
+        var exceptions = clazz.getExceptionTypes();
+        
         if (exceptions.length == 0) {
             return "";
         }
@@ -103,7 +104,6 @@ public abstract class AbstractMethodRepresentation {
     private void setModifier(final int modifierInt) {
         if (Modifier.isPrivate(modifierInt)) {
             isEmpty = true;
-            modifier = "";
         } else {
             isEmpty = false;
             if (Modifier.isPublic(modifierInt)) {
@@ -119,13 +119,11 @@ public abstract class AbstractMethodRepresentation {
     }
     
     /**
-     * Generates {@code arguments} {@code throwModifiers} {@code modifier}
-     * @param method ctor or method, that are implemented
+     * Generates {@code arguments} {@code modifier}
      */
-    private void setSignatureAndThrows(final Executable method) {
-        arguments = (resolveArguments(method.getParameters())) ;
-        throwModifiers = genThrows(method.getExceptionTypes());
-        setModifier(method.getModifiers());
+    protected final void setSignature() {
+        arguments = (resolveArguments(clazz.getParameters()));
+        setModifier(clazz.getModifiers());
     }
     
     /**
@@ -133,7 +131,7 @@ public abstract class AbstractMethodRepresentation {
      * @param mapper function that maps wrapper {@link Argument} to a string
      * @return function signature without return type and throws qualifiers
      */
-    protected String getArgumentsRepresentation(final Function<Argument, String> mapper) {
+    protected final String getArgumentsRepresentation(final Function<Argument, String> mapper) {
         return arguments.stream()
                         .map(mapper)
                         .collect(Collectors.joining(", "));
@@ -144,7 +142,7 @@ public abstract class AbstractMethodRepresentation {
      * Generates signature without brackets
      * @return signature without return type: so it looks like (type_i arg_i ...)
      */
-    protected String genArgsInSignature() {
+    protected final String genArgsInSignature() {
         return getArgumentsRepresentation(e -> e.getArgumentType() + " " + e.getArgumentName());
     }
 }
