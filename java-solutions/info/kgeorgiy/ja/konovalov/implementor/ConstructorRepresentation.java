@@ -33,7 +33,5 @@ public class ConstructorRepresentation extends AbstractMethodRepresentation {
             );
         }
     }
-    
-    
 }
 
