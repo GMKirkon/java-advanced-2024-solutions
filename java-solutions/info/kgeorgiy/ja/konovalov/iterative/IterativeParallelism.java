@@ -1,6 +1,6 @@
 package info.kgeorgiy.ja.konovalov.iterative;
 
-import info.kgeorgiy.java.advanced.iterative.NewListIP;
+import info.kgeorgiy.java.advanced.iterative.AdvancedIP;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -11,7 +11,7 @@ import java.util.function.*;
 /**
  * IterativeParallelism class provides parallel execution of various list operations.
  */
-public class IterativeParallelism implements NewListIP {
+public class IterativeParallelism implements AdvancedIP {
     
     /**
      * Record that represents mapped monoid
@@ -20,8 +20,7 @@ public class IterativeParallelism implements NewListIP {
      * @param <T> Type of elements processed
      * @param <V> Type of internal state
      */
-    private static record Operation<T, V>(Supplier<V> neutralSupplier, BiFunction<V, T, V> adder) {
-    }
+    private static record Operation<T, V>(Supplier<V> neutralSupplier, BiFunction<V, T, V> adder) {}
     
     /**
      * Basically a mapper(T -> V) + monoid over V
@@ -229,6 +228,16 @@ public class IterativeParallelism implements NewListIP {
                     return comparator.compare(a.get(), b.get()) >= 0 ? a : b;
                 }
         ).get();
+    }
+    
+    @Override
+    public <T> T reduce(int threads, List<T> values, T identity, BinaryOperator<T> operator, int step) throws InterruptedException {
+        return parallelize(threads, new SteppedList<>(values, step), new Operation<>(()-> identity, operator), operator);
+    }
+    
+    @Override
+    public <T, R> R mapReduce(int threads, List<T> values, Function<T, R> lift, R identity, BinaryOperator<R> operator, int step) throws InterruptedException {
+        return parallelize(threads, new SteppedList<>(values, step), new Operation<>(()-> identity, (a, b) -> operator.apply(a, lift.apply(b))), operator);
     }
 }
 

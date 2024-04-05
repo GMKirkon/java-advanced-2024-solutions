@@ -6,7 +6,7 @@ import java.util.Objects;
 /**
  * Specialization of {@link AbstractMethodRepresentation} for methods
  */
-public class MethodRepresentation extends AbstractMethodRepresentation implements Comparable<MethodRepresentation> {
+class MethodRepresentation extends AbstractMethodRepresentation implements Comparable<MethodRepresentation> {
     
     
     /**
