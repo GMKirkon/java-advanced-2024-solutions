@@ -134,7 +134,7 @@ public class IterativeParallelism implements AdvancedIP {
      *
      * @param <T>         the type of elements in the list
      * @param list        the list of elements
-     * @param threads     the number of concurrent threads to use
+     * @param reminder    the result of list.size() % threadsNumber, used to determine bounds
      * @param blockSize   the size of each block
      * @param blockNumber the index of the block to retrieve
      * @return a sub-list of elements from the specified list that belong to the nth block
