@@ -74,17 +74,30 @@ public class ParallelMapperImpl implements ParallelMapper {
         runningThreads.forEach(Thread::interrupt);
     }
     
+    /**
+     * Checks that ParallelMapper is not closed
+     */
     private void ensureOpen() {
         if (closed) {
             throw new IllegalStateException("ParallelMapper is closed");
         }
     }
     
+    /**
+     * Class provides a helper for parallel mapping operations.
+     * Stores {@code List<R>} that is going to be returned as a result of map operation.
+     * Exception aggregated from all mapping operations and
+     * Counter that shows how many elements are not processed yet
+     * @param <R>
+     */
     private class MapQueryHelper<R> {
         private final List<R> mappedValues;
         private final SynchronizedValue<RuntimeException> cumulativeException;
         private final CounterDown counter;
         
+        /**
+         * Creates MapQueryHelper with list of proviede capacity
+         */
         public MapQueryHelper(int capacity) {
             counter = new CounterDown(capacity);
             cumulativeException = new SynchronizedValue<>(null);
