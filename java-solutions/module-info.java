@@ -11,4 +11,5 @@ module info.kgeorgiy.ja.konovalov {
     requires info.kgeorgiy.java.advanced.iterative;
     
     requires java.compiler;
+    requires info.kgeorgiy.java.advanced.mapper;
 }

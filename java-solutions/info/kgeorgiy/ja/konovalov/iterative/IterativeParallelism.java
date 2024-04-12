@@ -1,17 +1,33 @@
 package info.kgeorgiy.ja.konovalov.iterative;
 
 import info.kgeorgiy.java.advanced.iterative.AdvancedIP;
+import info.kgeorgiy.java.advanced.mapper.ParallelMapper;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.*;
 
 /**
  * IterativeParallelism class provides parallel execution of various list operations.
  */
 public class IterativeParallelism implements AdvancedIP {
+    private final ParallelMapper parallelMapper;
+    
+    /**
+     * Default constructs IterativeParallelism
+     */
+    public IterativeParallelism() {
+        parallelMapper = null;
+    }
+    
+    /**
+     * Constructs IterativeParallelism from given mapper
+     */
+    public IterativeParallelism(ParallelMapper mapper) {
+        parallelMapper = mapper;
+    }
+    
 
     /**
      * Record that represents mapped monoid
@@ -45,6 +61,9 @@ public class IterativeParallelism implements AdvancedIP {
             currentState = operation.adder.apply(currentState, nxt);
         }
     }
+    
+    private static record StateAndValuesRecord<T, V>(State<T, V> state, List<? extends T> values) {
+    }
 
 
     /**
@@ -59,43 +78,55 @@ public class IterativeParallelism implements AdvancedIP {
      * @return the combined result of all the operations
      * @throws InterruptedException if any of the threads is interrupted during execution
      */
-    private static <T, V> V parallelize(int threads, List<? extends T> values, Operation<T, V> operation, BinaryOperator<V> resultsCombinator) throws InterruptedException {
+    private <T, V> V parallelize(int threads, List<? extends T> values, Operation<T, V> operation, BinaryOperator<V> resultsCombinator) throws InterruptedException {
         int blockSize = values.size() / threads;
-        List<State<T, V>> states = new ArrayList<>();
-        List<Thread> createdThreads = new ArrayList<>();
-
+        int reminder = values.size() % threads;
+        List<StateAndValuesRecord<T, V>> states = new ArrayList<>();
+        
         for (int i = 0; i < threads; i++) {
-            final int threadIndex = i;
-            states.add(new State<>(operation));
-            createdThreads.add(new Thread(() -> processBlock(
-                    getNthBlockList(values, threads, blockSize, threadIndex),
-                    states.get(threadIndex)
-            )));
-            createdThreads.getLast().start();
+            states.add(new StateAndValuesRecord<>(new State<>(operation), getNthBlockList(values, reminder, blockSize, i)));
         }
-
-        for (var u : createdThreads) {
-            u.join();
-            // :NOTE: этот код не дожидается завершения исполнения всех потоков, если вылетает InterruptedExcpetion
+        
+        if (parallelMapper != null) {
+            return parallelMapper.map((e) ->  {
+                for (var u : e.values) {
+                    e.state.apply(u);
+                }
+                return e.state.currentState;
+            }, states).stream().reduce(operation.neutralSupplier.get(), resultsCombinator);
+        } else {
+            final List<Thread> runningThreads = new ArrayList<>();
+            for (int i = 0; i < states.size(); ++i) {
+                final int finalI = i;
+                runningThreads.add(new Thread(() -> {
+                    for (var u : states.get(finalI).values) {
+                        states.get(finalI).state.apply(u);
+                    }
+                }));
+                runningThreads.getLast().start();
+            }
+            
+            InterruptedException throwExceptionDuringJoins = null;
+            for (Thread runningThread : runningThreads) {
+                try {
+                    runningThread.join();
+                } catch (InterruptedException exception) {
+                    if (throwExceptionDuringJoins == null) {
+                        throwExceptionDuringJoins = exception;
+                    } else {
+                        throwExceptionDuringJoins.addSuppressed(exception);
+                    }
+                }
+            }
+            
+            if (throwExceptionDuringJoins != null) {
+                throw throwExceptionDuringJoins;
+            }
+            
+            return states.stream()
+                         .map(x -> x.state.currentState)
+                         .reduce(operation.neutralSupplier.get(), resultsCombinator);
         }
-
-        return states.stream()
-                .map(state -> state.currentState)
-                .reduce(resultsCombinator)
-                .get();
-        // :NOTE: может, использовать .reduce(operation.neutralSupplier.get(),resultsCombinator), чтобы не пораждать промежуточные опшаналы
-    }
-
-    /**
-     * Processes each value in the given list using the provided block state.
-     *
-     * @param <T>        type of values in list
-     * @param <V>        type of internal state
-     * @param values     the list of values to process
-     * @param blockState the block state to apply on each value
-     */
-    private static <T, V> void processBlock(List<? extends T> values, State<T, V> blockState) {
-        values.forEach(blockState::apply);
     }
 
     /**
@@ -108,68 +139,48 @@ public class IterativeParallelism implements AdvancedIP {
      * @param blockNumber the index of the block to retrieve
      * @return a sub-list of elements from the specified list that belong to the nth block
      */
-    private static <T> List<? extends T> getNthBlockList(List<? extends T> list, int threads, int blockSize, int blockNumber) {
-        int lowerBound = blockSize * blockNumber;
-        int upperBound = (blockNumber + 1 == threads) ? list.size() : lowerBound + blockSize;
-        // :NOTE: не равномерное распределение задач по потокам: последнему потоку может достаться значтьельно меньше задач
+    private static <T> List<? extends T> getNthBlockList(List<? extends T> list, int reminder, int blockSize, int blockNumber) {
+        int lowerBound = blockSize * blockNumber + Integer.min(blockNumber, reminder);
+        int upperBound = lowerBound + blockSize + (blockNumber < reminder ? 1 : 0);
         return list.subList(lowerBound, upperBound);
     }
-
+    
+    private static <T> List<? extends T> wrapToSteps(List<? extends T> values, int step) {
+        return step == 1 ? values : new SteppedList<>(values, step);
+    }
+    
+    
     @Override
     public String join(int threads, List<?> values, int step) throws InterruptedException {
-        return parallelize(threads, new SteppedList<>(values, step), new Operation<>(
-                        StringBuilder::new,
-                        (a, b) -> {
-                            a.append(b.toString());
-                            return a;
-                        }
-                ),
-                (a, b) -> {
-                    a.append(b.toString());
-                    return a;
-                }
-        ).toString();
+        return genericMapReduce(threads, values, (a) -> new StringBuilder(a.toString()),
+                                StringBuilder::new, StringBuilder::append, step).toString();
     }
-
-    // :NOTE: идея с использованием своего Operation и State хорошая,
-    // но можно написать значительно проще и короче, если разделить применение всех операций на преобразующие (map) операции и объединяющие результаты (reduce) операции
-    // :NOTE: это позволяет реализовать все методы в 1-2 строки
+    
+    /*
+    * Only two methods that are huge: filter and map
+    * */
     @Override
     public <T> List<T> filter(int threads, List<? extends T> values, Predicate<? super T> predicate, int step) throws InterruptedException {
-        return parallelize(
-                threads,
-                new SteppedList<>(values, step),
-                new Operation<T, List<T>>(
-                        ArrayList::new,
-                        (a, b) -> {
-                            if (predicate.test(b)) {
-                                a.add(b);
-                            }
-                            return a;
-                        }
-                ),
-                (a, b) -> {
-                    a.addAll(b);
-                    return a;
-                }
-        );
+        return genericMapReduceWithAdder(threads, values, ArrayList::new, (a, b) -> {
+            if (predicate.test(b)) {
+                a.add(b);
+            }
+            return a;
+        }, (a, b) -> {
+            a.addAll(b);
+            return a;
+        }, step);
     }
-
+    
     @Override
     public <T, U> List<U> map(int threads, List<? extends T> values, Function<? super T, ? extends U> f, int step) throws InterruptedException {
-        // :NOTE: если step == 1, вероятно, разумно не создавать промежуточный лист
-        return parallelize(threads, new SteppedList<>(values, step), new Operation<T, List<U>>(
-                        ArrayList::new,
-                        (a, b) -> {
-                            a.add(f.apply(b));
-                            return a;
-                        }
-                ),
-                (a, b) -> {
-                    a.addAll(b);
-                    return a;
-                }
-        );
+        return genericMapReduceWithAdder(threads, values, ArrayList::new, (a, b) -> {
+            a.add(f.apply(b));
+            return a;
+        }, (a, b) -> {
+            a.addAll(b);
+            return a;
+        }, step);
     }
 
     @Override
@@ -179,82 +190,51 @@ public class IterativeParallelism implements AdvancedIP {
 
     @Override
     public <T> boolean all(int threads, List<? extends T> values, Predicate<? super T> predicate, int step) throws InterruptedException {
-        return parallelize(threads, new SteppedList<>(values, step), new Operation<T, Boolean>(
-                        () -> true,
-                        (a, b) -> predicate.test(b) && a
-                ),
-                (a, b) -> a & b
-        );
+        return genericMapReduce(threads, values, predicate::test, () -> true, (a, b) -> a & b, step);
     }
 
     @Override
     public <T> boolean any(int threads, List<? extends T> values, Predicate<? super T> predicate, int step) throws InterruptedException {
-        return parallelize(threads, new SteppedList<>(values, step), new Operation<T, Boolean>(
-                        () -> false,
-                        (a, b) -> predicate.test(b) || a
-                ),
-                (a, b) -> a | b
-        );
+        return genericMapReduce(threads, values, predicate::test, () -> false, (a, b) -> a | b, step);
     }
 
     @Override
     public <T> int count(int threads, List<? extends T> values, Predicate<? super T> predicate, int steps) throws InterruptedException {
-        return parallelize(threads, new SteppedList<>(values, steps), new Operation<T, Integer>(
-                        () -> 0,
-                        (a, b) -> {
-                            if (predicate.test(b)) {
-                                a += 1;
-                            }
-                            return a;
-                        }
-                ),
-                Integer::sum
-        );
+        return genericMapReduce(threads, values, (a) -> predicate.test(a) ? 1 : 0, () -> 0, Integer::sum, steps);
     }
 
     @Override
     public <T> T maximum(int threads, List<? extends T> values, Comparator<? super T> comparator, int steps) throws InterruptedException {
-        return parallelize(
-                threads,
-                new SteppedList<>(values, steps),
-                new Operation<T, Optional<T>>(
-                        Optional::empty,
-                        (a, b) -> {
-                            if (a.isEmpty() || comparator.compare(a.get(), b) < 0) {
-                                return Optional.of(b);
-                            } else {
-                                return a;
-                            }
-                        }
-                ),
-                (a, b) -> {
-                    if (a.isEmpty()) {
-                        return b;
-                    }
-                    if (b.isEmpty()) {
-                        return a;
-                    }
-                    return comparator.compare(a.get(), b.get()) >= 0 ? a : b;
-                }
-        ).get();
+        return genericReduce(threads, values, values::getFirst, (T a, T b) -> comparator.compare(a, b) < 0 ? b : a, steps);
+    }
+    
+    
+    private <T> T genericReduce(int threads, List<? extends T> values, Supplier<T> identitySupplier,
+                               BinaryOperator<T> operator, int step) throws InterruptedException {
+        return parallelize(threads, wrapToSteps(values, step), new Operation<>(identitySupplier, operator), operator);
+    }
+    
+    private <T, R> R genericMapReduceWithAdder(int threads, List<? extends T> values,
+                                     Supplier<R> identitySupplier, BiFunction<R, T, R> adder, BinaryOperator<R> operator, int step) throws InterruptedException {
+        return parallelize(threads, wrapToSteps(values, step), new Operation<>(identitySupplier, adder), operator);
+    }
+    
+    private <T, R> R genericMapReduce(int threads, List<? extends T> values, Function<? super T, ? extends R> lift,
+                                        Supplier<R> identitySupplier, BinaryOperator<R> operator, int step) throws InterruptedException {
+        return genericMapReduceWithAdder(threads, values, identitySupplier,
+                                         (a, b) -> operator.apply(a, lift.apply(b)), operator, step);
+    }
+    
+    @Override
+    public <T> T reduce(int threads, List<T> values, T identity, BinaryOperator<T> operator, int step)
+            throws InterruptedException {
+        return genericReduce(threads, values, () -> identity, operator, step);
     }
 
     @Override
-    public <T> T reduce(int threads, List<T> values, T identity, BinaryOperator<T> operator, int step) throws InterruptedException {
-        return parallelize(threads,
-                new SteppedList<>(values, step),
-                new Operation<>(() -> identity, operator),
-                operator);
-    }
-
-    @Override
-    public <T, R> R mapReduce(int threads, List<T> values, Function<T, R> lift, R identity, BinaryOperator<R> operator, int step) throws InterruptedException {
-        return parallelize(
-                threads,
-                new SteppedList<>(values, step),
-                new Operation<>(() -> identity, (a, b) -> operator.apply(a, lift.apply(b))),
-                operator
-        );
+    public <T, R> R mapReduce(int threads, List<T> values, Function<T, R> lift, R identity, BinaryOperator<R> operator, int step)
+            throws InterruptedException {
+        return genericMapReduce(threads, values, lift, () -> identity, operator, step);
     }
 }
 

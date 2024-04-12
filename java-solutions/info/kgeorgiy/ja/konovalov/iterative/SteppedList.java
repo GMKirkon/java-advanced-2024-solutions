@@ -4,9 +4,8 @@ import java.util.AbstractList;
 import java.util.List;
 
 public class SteppedList<T> extends AbstractList<T> {
-    // :NOTE: не хватает модификаторов доступа
-    List<T> actualList;
-    int step;
+    private final List<T> actualList;
+    private final int step;
     
     SteppedList(List<T> list, int step) {
         this.actualList = list;
