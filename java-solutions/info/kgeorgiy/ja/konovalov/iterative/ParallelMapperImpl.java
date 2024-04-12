@@ -72,6 +72,13 @@ public class ParallelMapperImpl implements ParallelMapper {
         
         closed = true;
         runningThreads.forEach(Thread::interrupt);
+        for (var u : runningThreads) {
+            try {
+                u.join();
+            } catch (InterruptedException ignored) {
+                // should actually never occur
+            }
+        }
     }
     
     /**
