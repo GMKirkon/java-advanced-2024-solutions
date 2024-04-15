@@ -84,6 +84,7 @@ public class IterativeParallelism implements AdvancedIP {
         List<StateAndValuesRecord<T, V>> states = new ArrayList<>();
         
         for (int i = 0; i < threads; i++) {
+            // :NOTE: все еще считаю, что State и StateAndValuesRecord на самом деле особо не нужно
             states.add(new StateAndValuesRecord<>(new State<>(operation), getNthBlockList(values, reminder, blockSize, i)));
         }
         
@@ -116,13 +117,15 @@ public class IterativeParallelism implements AdvancedIP {
                     } else {
                         throwExceptionDuringJoins.addSuppressed(exception);
                     }
+                    // :NOTE: если вылетает исключение, мы не дожидаемя завершени я потока
                 }
             }
             
             if (throwExceptionDuringJoins != null) {
                 throw throwExceptionDuringJoins;
             }
-            
+
+            // :NOTE: neutralSupplier не нужен
             return states.stream()
                          .map(x -> x.state.currentState)
                          .reduce(operation.neutralSupplier.get(), resultsCombinator);
@@ -152,6 +155,7 @@ public class IterativeParallelism implements AdvancedIP {
     
     @Override
     public String join(int threads, List<?> values, int step) throws InterruptedException {
+        // :NOTE: можно использовать стримы и Collections.joining()
         return genericMapReduce(threads, values, (a) -> new StringBuilder(a.toString()),
                                 StringBuilder::new, StringBuilder::append, step).toString();
     }
@@ -211,6 +215,7 @@ public class IterativeParallelism implements AdvancedIP {
     
     private <T> T genericReduce(int threads, List<? extends T> values, Supplier<T> identitySupplier,
                                BinaryOperator<T> operator, int step) throws InterruptedException {
+        // :NOTE: вижу много wrapToSteps(values, step)
         return parallelize(threads, wrapToSteps(values, step), new Operation<>(identitySupplier, operator), operator);
     }
     
