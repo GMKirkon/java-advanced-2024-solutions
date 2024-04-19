@@ -25,23 +25,47 @@ public class IterativeParallelism implements AdvancedIP {
     }
     
     /**
-     * Constructs IterativeParallelism from given streamMapper
+     * Constructs IterativeParallelism from given valuesTransformer
      */
     public IterativeParallelism(ParallelMapper mapper) {
         parallelMapper = mapper;
     }
     
     
+    /**
+     * Represents an operation(with neutral elements, so basically a monoid-like operation)
+     * that can be performed on a stream of elements.
+     *
+     * @param <T> the type of the input elements of the operation
+     * @param <V> the type of the result of the operation
+     */
     private static class Operation<T, V> {
+        /**
+         * Represents a supplier of results with a neutral value. Used
+         *
+         * @see Operation
+         */
         public final Supplier<V> neutralSupplier;
-        public final Function<Stream<? extends T>, V> streamMapper;
+        /**
+         * Represents a function that applies operation on a stream of elements.
+         * Designed to be used as mapReduce function most of the cases
+         */
+        public final Function<Stream<? extends T>, V> valuesTransformer;
+        /**
+         * Represents a function that applies a reducing operation on a stream of answers.
+         * So that is used in aggregating final answer
+         */
+        public final Function<Stream<V>, V> resultsCombiner;
         
-        public final Function<Stream<V>, V> streamCombiner;
-        
-        public Operation(Supplier<V> neutralSupplier, Function<Stream<? extends T>, V> mapper, Function<Stream<V>, V> streamCombiner) {
+        /**
+         * Creates Operation from given supplier, mapper and results-combiner
+         * Represents an operation (with neutral elements, so basically a monoid-like operation)
+         * that can be performed on a stream of elements.
+         */
+        public Operation(Supplier<V> neutralSupplier, Function<Stream<? extends T>, V> mapReducer, Function<Stream<V>, V> resultsCombiner) {
             this.neutralSupplier = neutralSupplier;
-            this.streamMapper = mapper;
-            this.streamCombiner = streamCombiner;
+            this.valuesTransformer = mapReducer;
+            this.resultsCombiner = resultsCombiner;
         }
     }
     
@@ -70,13 +94,13 @@ public class IterativeParallelism implements AdvancedIP {
         }
         
         if (parallelMapper != null) {
-            return operation.streamCombiner.apply(parallelMapper.map((e) -> operation.streamMapper.apply(values.stream()), blocks).stream());
+            return operation.resultsCombiner.apply(parallelMapper.map((e) -> operation.valuesTransformer.apply(values.stream()), blocks).stream());
         } else {
             final List<Thread> runningThreads = new ArrayList<>();
             for (int i = 0; i < blocks.size(); ++i) {
                 final int finalI = i;
                 runningThreads.add(new Thread(() ->
-                    answers.set(finalI, operation.streamMapper.apply(blocks.get(finalI).stream()))
+                    answers.set(finalI, operation.valuesTransformer.apply(blocks.get(finalI).stream()))
                 ));
                 runningThreads.getLast().start();
             }
@@ -112,7 +136,7 @@ public class IterativeParallelism implements AdvancedIP {
                 throw throwExceptionDuringJoins;
             }
             
-            return operation.streamCombiner.apply(answers.stream());
+            return operation.resultsCombiner.apply(answers.stream());
         }
     }
 
@@ -171,10 +195,9 @@ public class IterativeParallelism implements AdvancedIP {
     
     private <T, U, A> List<U> listTransformingOperation(int threads, List<? extends T> values, int step,
                                                         Collector<T, A, List<U>> collector) throws InterruptedException {
-        return collectorsOperation(threads, values, step, ArrayList::new, collector, Collectors.collectingAndThen(
-                Collectors.toList(),
-                list -> list.stream().flatMap(List::stream).collect(Collectors.toList())
-        ));
+        return collectorsOperation(threads, values, step, ArrayList::new, collector,
+                Collectors.flatMapping(List::stream, Collectors.toList())
+        );
     }
     @Override
     public <T> List<T> filter(int threads, List<? extends T> values, Predicate<? super T> predicate, int step) throws InterruptedException {
@@ -192,7 +215,7 @@ public class IterativeParallelism implements AdvancedIP {
                            new Operation<>(
                                    identitySupplier,
                                    (Stream<? extends T> stream) -> stream.map(mapper).reduce(identitySupplier.get(), operator),
-                                   (s) -> s.reduce(identitySupplier.get(), operator)
+                                   s -> s.reduce(identitySupplier.get(), operator)
                            )
         );
     }
