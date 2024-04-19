@@ -79,7 +79,6 @@ public class ParallelMapperImpl implements ParallelMapper {
                     u.join();
                     succeeded = true;
                 } catch (InterruptedException ignored) {
-                    // should actually never occur
                 }
             }
         }

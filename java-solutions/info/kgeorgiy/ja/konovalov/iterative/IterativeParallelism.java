@@ -94,7 +94,7 @@ public class IterativeParallelism implements AdvancedIP {
         }
         
         if (parallelMapper != null) {
-            return operation.resultsCombiner.apply(parallelMapper.map((e) -> operation.valuesTransformer.apply(values.stream()), blocks).stream());
+            return operation.resultsCombiner.apply(parallelMapper.map((curValues) -> operation.valuesTransformer.apply(curValues.stream()), blocks).stream());
         } else {
             final List<Thread> runningThreads = new ArrayList<>();
             for (int i = 0; i < blocks.size(); ++i) {
@@ -201,12 +201,12 @@ public class IterativeParallelism implements AdvancedIP {
     }
     @Override
     public <T> List<T> filter(int threads, List<? extends T> values, Predicate<? super T> predicate, int step) throws InterruptedException {
-        return listTransformingOperation(threads, values, step, Collectors.filtering(predicate, Collectors.toCollection(ArrayList::new)));
+        return listTransformingOperation(threads, values, step, Collectors.filtering(predicate, Collectors.toList()));
     }
     
     @Override
     public <T, U> List<U> map(int threads, List<? extends T> values, Function<? super T, ? extends U> mapper, int step) throws InterruptedException {
-        return listTransformingOperation(threads, values, step, Collectors.mapping(mapper, Collectors.toCollection(ArrayList::new)));
+        return listTransformingOperation(threads, values, step, Collectors.mapping(mapper, Collectors.toList()));
     }
     
     private <T, R> R genericMapReduce(int threads, List<? extends T> values, Function<T, R> mapper,
