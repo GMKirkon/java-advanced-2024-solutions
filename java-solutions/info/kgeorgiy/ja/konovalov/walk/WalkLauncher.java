@@ -71,7 +71,7 @@ public class WalkLauncher {
         if (parent != null) {
             try {
                 Files.createDirectories(parent);
-            } catch (final IOException e) {
+            } catch (final IOException | SecurityException e) {
                 System.err.println("Warning, could not create parent directories to output file");
             }
         }
@@ -90,13 +90,13 @@ public class WalkLauncher {
                             writer.writeHash(hasher.getErrorHash(), root);
                         }
                     }
-                } catch (final IOException e) {
+                } catch (final IOException | SecurityException e) {
                     throw new WalkingException("Error processing input file");
                 }
-            } catch (final IOException e) {
+            } catch (final IOException | SecurityException e) {
                 throw new ImpossibleToOpenFile("output file " + outputFile, e.getMessage());
             }
-        } catch (final IOException e) {
+        } catch (final IOException | SecurityException e) {
             throw new ImpossibleToOpenFile("input file " + inputFile, e.getMessage());
         }
     }
