@@ -88,16 +88,7 @@ public class WebCrawler implements AdvancedCrawler {
         }
         
         private boolean checkString(String str) {
-            if (excludes == null) {
-                return true;
-            }
-            
-            for (var prohibited : excludes) {
-                if (str.contains(prohibited)) {
-                    return false;
-                }
-            }
-            return true;
+            return excludes == null || excludes.stream().noneMatch(str::contains);
         }
         
         public Result getResult() {
@@ -112,6 +103,13 @@ public class WebCrawler implements AdvancedCrawler {
                 barrier.arriveAndAwaitAdvance();
                 
                 currentLayerLinks = nextLayerLinks;
+                /* heuristic, could be used to speedup downloads, less time for Host management will be used
+                    on tests -1.5-2.5% in time
+                    currentLayerLinks = new ConcurrentLinkedQueue<>();
+                    var tmp = new ArrayList<>(nextLayerLinks);
+                    Collections.shuffle(tmp);
+                    currentLayerLinks.addAll(tmp);
+                 */
                 nextLayerLinks = new ConcurrentLinkedQueue<>();
             }
             return new Result(new ArrayList<>(downloaded), errors);
@@ -230,7 +228,7 @@ public class WebCrawler implements AdvancedCrawler {
         final List<Integer> inputBounds = new ArrayList<>(args.length + 1);
         
         for (int i = 1; i < args.length; i++) {
-            inputBounds.set(i - 1, parseInt(args[i], MAIN_ARGUMENTS_NAMES.get(i - 1)));
+            inputBounds.set(i - 1, parseInt(args[i], MAIN_ARGUMENTS_NAMES.get(i)));
         }
         if (args.length < 2) {
             inputBounds.add(DEFAULT_NUMBER_OF_DOWNLOADERS);
@@ -259,7 +257,7 @@ public class WebCrawler implements AdvancedCrawler {
         ) {
             var Result = crawler.download(url, DEFAULT_DEPTH);
             System.out.println("Succesefully downloaded:");
-            Result.getDownloaded().stream().peek((name) -> System.out.println(name)).toList();
+            Result.getDownloaded().stream().peek(System.out::println).toList();
             System.out.println("Errors occur:");
             Result.getErrors().entrySet().stream().peek((entry) -> System.out.printf(
                     "url %s, problem : %s",
