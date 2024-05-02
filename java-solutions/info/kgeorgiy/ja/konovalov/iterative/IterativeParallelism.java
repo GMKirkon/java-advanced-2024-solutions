@@ -104,10 +104,6 @@ public class IterativeParallelism implements AdvancedIP {
 
         InterruptedException throwExceptionDuringJoins = null;
         for (Thread runningThread : runningThreads) {
-            if (throwExceptionDuringJoins != null) {
-                // to speed up the joining, as we don't care about the computation result anymore
-                runningThread.interrupt();
-            }
 
             boolean succeeded = false;
             while (!succeeded) {

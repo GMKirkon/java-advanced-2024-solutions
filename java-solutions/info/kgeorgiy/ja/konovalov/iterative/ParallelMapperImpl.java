@@ -184,6 +184,8 @@ public class ParallelMapperImpl implements ParallelMapper {
     /**
      * CounterDown represents a counter that can be decremented and checked for zero.
      * The counter cannot have a negative value.
+     * <h3>Consider using java.util.concurrent.CountDownLatch</h3>
+     * @see java.util.concurrent.CountDownLatch
      */
     private static class CounterDown {
         /**
@@ -266,7 +268,7 @@ public class ParallelMapperImpl implements ParallelMapper {
      * with ONLY synchronized methods push and poll, no iterators, spliterators and many other methods
      * of regular queue
      * <h3>
-     * Consider using lock-free queue instead if you have such option
+     * Consider using lock-free or better locking queue instead if you have such option
      * </h3>
      * @param <T> the type of elements in the queue
      */
