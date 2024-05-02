@@ -150,7 +150,7 @@ public class Implementor implements JarImpler {
         final Path buildDirectory;
         try {
             buildDirectory = Files.createTempDirectory(jarFile.getParent(), "jarImplementor");
-        } catch (final IOException e) {
+        } catch (final IOException | IllegalArgumentException | SecurityException | UnsupportedOperationException e) {
             throw new IOImplerException("Unable to create temporary directory to store compiled files " + e.getMessage());
         }
         
@@ -205,7 +205,7 @@ public class Implementor implements JarImpler {
      * Generates actual java path for class
      *
      * @param token     type token for implemented/extended interface/class
-     * @param extension .java or .class
+     * @param extension java or class
      * @return Path that refers to needed implementation class
      */
     private static Path getClassPath(final Class<?> token, final String extension) {
