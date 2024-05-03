@@ -34,14 +34,14 @@ public class WebCrawler implements AdvancedCrawler {
             "extractors",
             "perHost"
     );
-    public final Downloader downloader;
+    private final Downloader downloader;
     private final ExecutorService downloadersPool;
     private final ExecutorService extractersPool;
     private final ConcurrentHashMap<String, HostQueue> hostOracle = new ConcurrentHashMap<>();
     private final int maxPerHost;
     
     
-    private class HostQueue {
+    private final class HostQueue {
         Semaphore blocker = new Semaphore(maxPerHost);
         ConcurrentLinkedQueue<Runnable> queue = new ConcurrentLinkedQueue<>();
         
@@ -66,7 +66,7 @@ public class WebCrawler implements AdvancedCrawler {
         }
     }
     
-    private class DownloadQueryHelper {
+    private final class DownloadQueryHelper  {
         private final ConcurrentLinkedQueue<String> downloaded = new ConcurrentLinkedQueue<>();
         private final ConcurrentMap<String, IOException> errors = new ConcurrentHashMap<>();
         private final Set<String> found = ConcurrentHashMap.newKeySet();
@@ -102,7 +102,7 @@ public class WebCrawler implements AdvancedCrawler {
                 
                 barrier.arriveAndAwaitAdvance();
                 
-                currentLayerLinks = nextLayerLinks;
+                 currentLayerLinks = nextLayerLinks;
                 /* heuristic, could be used to speedup downloads, less time for Host management will be used
                     on tests -1.5-2.5% in time
                     currentLayerLinks = new ConcurrentLinkedQueue<>();
@@ -126,7 +126,7 @@ public class WebCrawler implements AdvancedCrawler {
             hostOracle.putIfAbsent(host, new HostQueue());
             final var currentManager = hostOracle.get(host);
             final Semaphore currentSemaphore = currentManager.blocker;
-            Runnable runnable = () -> {
+            Runnable downloadingFunction = () -> {
                 try {
                     var document = downloader.download(url);
                     downloaded.add(url);
@@ -143,7 +143,7 @@ public class WebCrawler implements AdvancedCrawler {
                 }
             };
             
-            currentManager.add(runnable);
+            currentManager.add(downloadingFunction);
         }
         
         private String getHost(String url) {
@@ -200,7 +200,7 @@ public class WebCrawler implements AdvancedCrawler {
         maxPerHost = perHost;
     }
     
-    protected static void checkParameters(final int downloaders, final int extractors, final int perHost) throws IllegalArgumentException {
+    private static void checkParameters(final int downloaders, final int extractors, final int perHost) throws IllegalArgumentException {
         checkNonnegativeThreadCount(downloaders, "number of downloading threads");
         checkNonnegativeThreadCount(extractors, "number of extracting threads");
         checkNonnegativeThreadCount(perHost, "number of pages that could be downloaded from single host");
