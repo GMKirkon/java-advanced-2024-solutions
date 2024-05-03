@@ -119,18 +119,6 @@ public class Implementor implements JarImpler {
     }
     
     /**
-     * Transforms the given implementation code to Unicode escape sequences for characters outside the ASCII range.
-     *
-     * @param implementationCode the implementation code to transform
-     * @return the transformed implementation code
-     */
-    private static String transformToUnicode(String implementationCode) {
-        return implementationCode.chars()
-                                 .mapToObj(c -> c >= 128 ? String.format("\\u%04X", c) : String.valueOf((char) c))
-                                 .collect(Collectors.joining());
-    }
-    
-    /**
      * Actual implementation for {@link Implementor#implementJar(Class, Path)}
      * <p>
      * Creates basic implementation for class that is provided by {@code token}
@@ -227,6 +215,18 @@ public class Implementor implements JarImpler {
                 System.err.println("Warning, could not create parent directories to output path");
             }
         }
+    }
+    
+    /**
+     * Transforms the given implementation code to Unicode escape sequences for characters outside the ASCII range.
+     *
+     * @param implementationCode the implementation code to transform
+     * @return the transformed implementation code
+     */
+    private static String transformToUnicode(String implementationCode) {
+        return implementationCode.chars()
+                                 .mapToObj(c -> c >= 128 ? String.format("\\u%04X", c) : String.valueOf((char) c))
+                                 .collect(Collectors.joining());
     }
     
     /**
