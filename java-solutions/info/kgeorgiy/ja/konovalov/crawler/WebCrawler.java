@@ -181,13 +181,9 @@ public class WebCrawler implements AdvancedCrawler {
         
         private void clearUsedHosts() {
             usedHosts.stream().peek(host -> {
-                hostOracle.computeIfPresent(host, (String currentHost, HostQueue oracle) -> {
-                    if (oracle.counter.decrementAndGet() == 0) {
-                        return null;
-                    } else {
-                        return oracle;
-                    }
-                });
+                hostOracle.computeIfPresent(host, (String currentHost, HostQueue oracle) ->
+                    oracle.counter.decrementAndGet() == 0 ? null : oracle
+                );
             }).toList();
         }
     }
