@@ -168,7 +168,8 @@ public class ParallelMapperImpl implements ParallelMapper {
                 wait();
             }
             
-            if (!counter.isZero()) {
+            //even if counted correctly, if mapper is closed exception is thrown :(
+            if (closed) {
                 ensureOpen();
             }
             
