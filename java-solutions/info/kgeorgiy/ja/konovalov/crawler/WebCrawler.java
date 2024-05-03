@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class WebCrawler implements AdvancedCrawler {
     private static final int DEFAULT_DEPTH = 2;
@@ -44,6 +45,7 @@ public class WebCrawler implements AdvancedCrawler {
     
     private final class HostQueue {
         Semaphore blocker = new Semaphore(maxPerHost);
+        AtomicInteger counter = new AtomicInteger(1);
         ConcurrentLinkedQueue<Runnable> queue = new ConcurrentLinkedQueue<>();
         
         void add(final Runnable runnable) {
@@ -52,7 +54,7 @@ public class WebCrawler implements AdvancedCrawler {
         }
         
         /*
-         * Can be proven[with amortized analysis], that no more than 2 * number_of_elements_added_in_total
+         * Can be proven[with amortized analysis], that no more than 2 * number of elements added in total
          * calls to tryNext would be made! So that is not an active wait.
          */
         void tryNext() {
@@ -179,10 +181,13 @@ public class WebCrawler implements AdvancedCrawler {
         
         private void clearUsedHosts() {
             usedHosts.stream().peek(host -> {
-                // :NOTE: you can remove just created object // fixed in discord
-                hostOracle.computeIfPresent(host, (String currentHost, HostQueue oracle) ->
-                        oracle.queue.isEmpty() ? null : oracle
-                );
+                hostOracle.computeIfPresent(host, (String currentHost, HostQueue oracle) -> {
+                    if (oracle.counter.decrementAndGet() == 0) {
+                        return null;
+                    } else {
+                        return oracle;
+                    }
+                });
             }).toList();
         }
     }
