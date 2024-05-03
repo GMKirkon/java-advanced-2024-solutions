@@ -1,5 +1,6 @@
 package info.kgeorgiy.ja.konovalov.walk;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileVisitor;
@@ -92,7 +93,9 @@ public class WalkLauncher {
                         }
                     }
                 } catch (final IOException e) {
-                    throw new WalkingException("Error processing input file");
+                    throw new WalkingException("Error processing input file" + e.getMessage());
+                } catch (final SecurityException e) {
+                    throw new WalkingException("Error walking tree due to security manager " + e.getMessage());
                 }
             } catch (final IOException | SecurityException e) {
                 throw new ImpossibleToOpenFile("output file " + outputFile, e.getMessage());
