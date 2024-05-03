@@ -18,7 +18,7 @@ public class HashWriter {
     public void writeHash(final String hash, final String file) throws ImpossibleToOutputResult {
         try {
             writer.write(String.format("%s %s%n", hash, file));
-        } catch (IOException | SecurityException e) {
+        } catch (IOException e) {
             throw new ImpossibleToOutputResult(file, e.getMessage());
         }
     }

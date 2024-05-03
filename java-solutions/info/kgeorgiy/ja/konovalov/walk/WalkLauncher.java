@@ -1,6 +1,7 @@
 package info.kgeorgiy.ja.konovalov.walk;
 
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -71,7 +72,7 @@ public class WalkLauncher {
         if (parent != null) {
             try {
                 Files.createDirectories(parent);
-            } catch (final IOException | SecurityException e) {
+            } catch (final IOException | SecurityException | UnsupportedOperationException e) {
                 System.err.println("Warning, could not create parent directories to output file");
             }
         }
@@ -90,7 +91,7 @@ public class WalkLauncher {
                             writer.writeHash(hasher.getErrorHash(), root);
                         }
                     }
-                } catch (final IOException | SecurityException e) {
+                } catch (final IOException e) {
                     throw new WalkingException("Error processing input file");
                 }
             } catch (final IOException | SecurityException e) {

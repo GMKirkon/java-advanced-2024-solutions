@@ -31,7 +31,7 @@ public class RecursiveVisitor extends SimpleFileVisitor<Path> {
                 hasher.hash(buff, read);
             }
             writer.writeHash(hasher.getHash(), file.toString());
-        } catch (final IOException | SecurityException e) {
+        } catch (final IOException e) {
             writeZeroHash(file);
         }
         return CONTINUE;
