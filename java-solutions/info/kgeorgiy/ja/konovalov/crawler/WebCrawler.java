@@ -179,6 +179,7 @@ public class WebCrawler implements AdvancedCrawler {
         
         private void clearUsedHosts() {
             usedHosts.stream().peek(host -> {
+                // :NOTE: you can remove just created object // fixed in discord
                 hostOracle.computeIfPresent(host, (String currentHost, HostQueue oracle) ->
                         oracle.queue.isEmpty() ? null : oracle
                 );
