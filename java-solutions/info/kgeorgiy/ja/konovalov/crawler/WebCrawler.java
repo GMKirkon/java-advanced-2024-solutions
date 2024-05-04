@@ -128,7 +128,15 @@ public class WebCrawler implements AdvancedCrawler {
                 return;
             }
             
-            final var currentManager = hostOracle.computeIfAbsent(host, k -> new HostQueue());
+            final var currentManager = hostOracle.compute(host, (k, v) -> {
+                if (v == null) {
+                    return new HostQueue();
+                } else {
+                    v.counter.incrementAndGet();
+                    return v;
+                }
+            });
+            
             final Semaphore currentSemaphore = currentManager.blocker;
             final Runnable downloadingFunction = () -> {
                 try {

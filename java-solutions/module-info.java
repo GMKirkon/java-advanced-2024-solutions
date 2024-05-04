@@ -1,4 +1,3 @@
-
 /**
  * homework solutions module
  * for <a href="https://www.kgeorgiy.info/courses/java-advanced/">Java Advanced</a> course.
@@ -7,10 +6,11 @@
  */
 module info.kgeorgiy.ja.konovalov {
     requires info.kgeorgiy.java.advanced.student;
+    requires info.kgeorgiy.java.advanced.mapper;
     requires info.kgeorgiy.java.advanced.implementor;
     requires info.kgeorgiy.java.advanced.iterative;
     requires info.kgeorgiy.java.advanced.crawler;
-    
+    requires info.kgeorgiy.java.advanced.hello;
+
     requires java.compiler;
-    requires info.kgeorgiy.java.advanced.mapper;
 }
