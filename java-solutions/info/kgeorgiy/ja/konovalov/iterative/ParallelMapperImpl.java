@@ -12,7 +12,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 public class ParallelMapperImpl implements ParallelMapper {
-    private boolean closed = false;
+    private volatile boolean closed = false;
     private final List<Thread> runningThreads;
     
     private final SimplifiedSynchronizedQueue<Runnable> queue;
