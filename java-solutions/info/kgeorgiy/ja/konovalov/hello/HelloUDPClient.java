@@ -6,10 +6,12 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
@@ -86,12 +88,42 @@ public class HelloUDPClient implements HelloClient {
         )];
     }
     
-    public static void main(String[] args) {
-    
+    public static void main(String... args) {
+        Objects.requireNonNull(
+                args,
+                "first of all main is method to access HelloUDPClient from outside java, second, do not provide null as arguments"
+        );
+        if (args.length != 5) {
+            printUsage();
+            return;
+        }
+        
+        Integer port = Internal.parsePositiveInteger(args[1], "port");
+        String prefix = args[2];
+        Integer threads = Internal.parsePositiveInteger(args[3], "threads");
+        Integer requests = Internal.parsePositiveInteger(args[4], "requests");
+        
+        if (port == null) {
+            printUsage();
+            return;
+        }
+        
+        SocketAddress address = InetSocketAddress.createUnresolved(args[0], port);
+        
+        if (threads == null || requests == null) {
+            printUsage();
+            return;
+        }
+        run(address, prefix, threads, requests);
     }
     
-    @Override
-    public void run(String host, int port, String prefix, int threads, int requests) {
+    private static void printUsage() {
+        System.out.println("Usage: <ip/name> <port> <prefix> <threads> <requests>");
+        System.out.println("threads and requests should be positive, ip should be correct");
+    }
+    
+    
+    private static void run(SocketAddress address, String prefix, int threads, int requests) {
         Internal.checkForPositive(threads, "could not sends requests in non positive number of threads", true);
         Internal.checkForPositive(requests, "could not sends non positive number of requests", true);
         
@@ -107,7 +139,6 @@ public class HelloUDPClient implements HelloClient {
             });
         };
         
-        InetSocketAddress address = getInetSocketAddress(host, port);
         
         try (ExecutorService executorService = Executors.newFixedThreadPool(threads)) {
             IntStream.range(1, threads + 1).peek(numberOfThread -> {
@@ -154,7 +185,7 @@ public class HelloUDPClient implements HelloClient {
         }
     }
     
-    boolean checkAnswerForCorrectness(String answer, int numberOfThread, int numberOfRequest) {
+    private static boolean checkAnswerForCorrectness(String answer, int numberOfThread, int numberOfRequest) {
         Matcher matcher = pattern.matcher(answer);
         
         if (matcher.matches()) {
@@ -173,5 +204,11 @@ public class HelloUDPClient implements HelloClient {
         } else {
             return false;
         }
+    }
+    
+    @Override
+    public void run(String host, int port, String prefix, int threads, int requests) {
+        InetSocketAddress address = getInetSocketAddress(host, port);
+        run(address, prefix, threads, requests);
     }
 }
