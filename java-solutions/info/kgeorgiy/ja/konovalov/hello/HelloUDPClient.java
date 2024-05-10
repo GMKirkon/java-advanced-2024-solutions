@@ -141,14 +141,13 @@ public class HelloUDPClient implements HelloClient {
         
         
         try (ExecutorService executorService = Executors.newFixedThreadPool(threads)) {
-            // :NOTE: foreach
-            IntStream.range(1, threads + 1).peek(numberOfThread -> {
+            IntStream.range(1, threads + 1).forEach(numberOfThread -> {
                 executorService.submit(() -> {
                     try (DatagramSocket socket = new DatagramSocket()) {
                         socket.connect(address);
                         byte[] buffer = getBufferForMessagingWithServer(prefix, requests, numberOfThread, socket);
                         
-                        IntStream.range(1, requests + 1).peek(numberOfRequest -> {
+                        IntStream.range(1, requests + 1).forEach(numberOfRequest -> {
                             try {
                                 String request = formServerRequest(prefix, numberOfThread, numberOfRequest);
                                 byte[] requestBytes = request.getBytes(StandardCharsets.UTF_8);
@@ -172,12 +171,12 @@ public class HelloUDPClient implements HelloClient {
                             } catch (IOException e) {
                                 addSuppressedException.accept(e);
                             }
-                        }).toArray();
+                        });
                     } catch (IOException e) {
                         addSuppressedException.accept(e);
                     }
                 });
-            }).toArray();
+            });
         }
         
         Exception queryException = requestException.get();

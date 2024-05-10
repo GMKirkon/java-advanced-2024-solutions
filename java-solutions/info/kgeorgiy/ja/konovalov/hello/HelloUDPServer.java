@@ -201,9 +201,9 @@ public class HelloUDPServer implements NewHelloServer {
     private void createListeners(Map<Integer, String> ports) throws UncheckedSocketException {
         final UncheckedSocketException[] startingException = {null};
         
-        ports.entrySet().stream().peek(entry -> {
+        ports.forEach((key, value) -> {
             try {
-                listeners.add(new PortListener(entry.getKey(), entry.getValue()));
+                listeners.add(new PortListener(key, value));
             } catch (UncheckedSocketException e) {
                 if (startingException[0] == null) {
                     startingException[0] = e;
@@ -211,11 +211,11 @@ public class HelloUDPServer implements NewHelloServer {
                     startingException[0].addSuppressed(e);
                 }
             }
-        }).toList();
+        });
         
         if (startingException[0] != null) {
             currentState = serverStates.CLOSING;
-            listeners.stream().peek(x -> x.socket.close()).toList();
+            listeners.forEach(x -> x.socket.close());
             throw startingException[0];
         }
     }
@@ -230,7 +230,7 @@ public class HelloUDPServer implements NewHelloServer {
     }
     
     private void closeAllRunningThreads() {
-        listeners.stream().peek(x -> x.socket.close()).toList();
+        listeners.forEach(x -> x.socket.close());
         listeners.clear();
         queryHandlersPool.close();
         portListenersPool.close();
