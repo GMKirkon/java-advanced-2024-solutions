@@ -141,6 +141,7 @@ public class HelloUDPClient implements HelloClient {
         
         
         try (ExecutorService executorService = Executors.newFixedThreadPool(threads)) {
+            // :NOTE: foreach
             IntStream.range(1, threads + 1).peek(numberOfThread -> {
                 executorService.submit(() -> {
                     try (DatagramSocket socket = new DatagramSocket()) {
