@@ -13,6 +13,7 @@ import java.util.function.UnaryOperator;
 
 public class ParallelMapperImpl implements ParallelMapper {
     private volatile boolean closed = false;
+    private final static int DEFAULT_TIMEOUT_IN_MILLISECONDS = 1000;
     private final List<Thread> runningThreads;
     
     private final SimplifiedSynchronizedQueue<Runnable> queue;
@@ -36,8 +37,11 @@ public class ParallelMapperImpl implements ParallelMapper {
         for (int i = 0; i < threads; i++) {
             runningThreads.add(new Thread(() -> {
                 try {
-                    while (!Thread.currentThread().isInterrupted()) {
-                        queue.poll().run();
+                    while (!Thread.currentThread().isInterrupted() && !closed) {
+                        var task = queue.poll();
+                        if (task != null) {
+                            task.run();
+                        }
                     }
                 } catch (InterruptedException ignored) {
                     // just ignore while main thread is not interrupted
@@ -71,6 +75,7 @@ public class ParallelMapperImpl implements ParallelMapper {
         ensureOpen();
         
         closed = true;
+        queue.terminate();
         runningThreads.forEach(Thread::interrupt);
         for (var u : runningThreads) {
             boolean succeeded = false;
@@ -165,7 +170,7 @@ public class ParallelMapperImpl implements ParallelMapper {
          */
         synchronized public List<R> evaluate() throws InterruptedException {
             while (!counter.isZero() && !closed) {
-                wait();
+                wait(DEFAULT_TIMEOUT_IN_MILLISECONDS);
             }
             
             //even if counted correctly, if mapper is closed exception is thrown :(
@@ -273,7 +278,7 @@ public class ParallelMapperImpl implements ParallelMapper {
      * </h3>
      * @param <T> the type of elements in the queue
      */
-    private static class SimplifiedSynchronizedQueue<T> {
+    private class SimplifiedSynchronizedQueue<T> {
         private final Queue<T> queue;
         private final int MAXIMUM_CAPACITY = 10000;
         
@@ -290,6 +295,9 @@ public class ParallelMapperImpl implements ParallelMapper {
          * @param item the item to be pushed into the queue
          */
         public synchronized void push(final T item) throws InterruptedException {
+            if (closed) {
+                return;
+            }
             while (queue.size() == MAXIMUM_CAPACITY) {
                 wait();
             }
@@ -305,6 +313,9 @@ public class ParallelMapperImpl implements ParallelMapper {
          * @throws InterruptedException if the current thread is interrupted
          */
         public synchronized T poll() throws InterruptedException {
+            if (closed) {
+                return null;
+            }
             while (queue.isEmpty()) {
                 wait();
             }
@@ -312,6 +323,15 @@ public class ParallelMapperImpl implements ParallelMapper {
             notifyAll();
             return value;
         }
+        
+        /**
+         * Clears the queue if parallel mapper was closed
+         */
+        public synchronized void terminate() {
+            if (!closed) {
+                return;
+            }
+            queue.clear();
+        }
     }
-    
 }
