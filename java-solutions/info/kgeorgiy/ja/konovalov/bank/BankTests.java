@@ -1,8 +1,9 @@
 package info.kgeorgiy.ja.konovalov.bank;
 
-import info.kgeorgiy.java.advanced.base.BaseTest;
-import info.kgeorgiy.java.advanced.base.BaseTester;
+//import info.kgeorgiy.java.advanced.base.BaseTest;
+//import info.kgeorgiy.java.advanced.base.BaseTester;
 
+import info.kgeorgiy.java.advanced.base.BaseTester;
 import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
