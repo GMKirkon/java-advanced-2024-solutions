@@ -32,6 +32,7 @@ public class RemoteAccount implements Account {
     @Override
     public synchronized void setAmount(final int amount) {
         System.out.println("Setting amount of money for account " + id);
+        // :NOTE: отрицательный баланс
         this.amount = amount;
     }
     

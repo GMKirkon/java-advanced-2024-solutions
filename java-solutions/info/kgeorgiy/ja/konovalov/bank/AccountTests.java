@@ -204,3 +204,5 @@ public class AccountTests {
         Assertions.assertEquals(balances.get(1).get(), accountKir.getAmount());
     }
 }
+
+// :NOTE: переводы через банк?

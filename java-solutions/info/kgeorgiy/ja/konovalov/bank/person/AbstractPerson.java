@@ -41,6 +41,7 @@ public abstract class AbstractPerson implements Person {
     
     @Override
     public void addAccount(Account account, String bankId) throws RemoteException {
+        // :NOTE: сделать через bank
         String fullId = getAccountActualId(bankId);
         
         if (!Objects.equals(account.getId(), fullId)) {

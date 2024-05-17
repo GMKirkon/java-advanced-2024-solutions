@@ -18,7 +18,6 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -84,7 +83,7 @@ public class ActualBankTests {
     }
     
     @Test
-    public void DefaultBank() throws RemoteException {
+    public void defaultBank() throws RemoteException {
         int port = rmiRegistriesPorts.getFirst();
         Bank bank = new RemoteBank(port);
         String id = AccountTests.generateRandomAccountId();
@@ -215,4 +214,7 @@ public class ActualBankTests {
                 () -> UnicastRemoteObject.unexportObject(localPerson, false)
         );
     }
+
+    // :NOTE: создать много людей + у них много акаунтов
+    // :NOTE: и все это параллельно
 }

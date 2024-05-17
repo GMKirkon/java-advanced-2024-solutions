@@ -179,7 +179,7 @@ public class PersonsTests {
         String fullAccountID = generateFullAccountIdForPerson(person, accountID);
         
         var createdInitialAccount = createValidAccountForPerson(person, accountID);
-        person.addAccount(createdInitialAccount, accountID);
+        person.addAccount(createdInitialAccount, accountID); // :NOTE: ???
         Assertions.assertEquals(person.getAllAccounts().size(), 1);
         
         var account = getNonNullAccountFromPerson(person, accountID);
