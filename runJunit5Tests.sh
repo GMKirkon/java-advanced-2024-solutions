@@ -9,7 +9,7 @@ OUT_DIR="$PROJECT_ROOT/out/test-classes"
 SRC_DIR="$PROJECT_ROOT/java-solutions"
 
 CLASS_PATH=`./getClasspaths.sh`
-echo "$CLASS_PATH"
+
 # Create the output directory if it doesn't exist
 mkdir -p "$OUT_DIR"
 

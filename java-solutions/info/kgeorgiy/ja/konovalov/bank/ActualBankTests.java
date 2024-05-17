@@ -26,7 +26,7 @@ import java.util.Random;
 public class ActualBankTests {
     private static final Random random = new Random(1234786516234851234L);
     private static final List<Integer> rmiRegistriesPorts = List.of(239, 366, 533);
-    private static final List<Bank> banks = new ArrayList<>(rmiRegistriesPorts.size());
+    private static final Bank[] banks = new Bank[rmiRegistriesPorts.size()];
     
     static Account addRandomAccountToBank(Bank bank) throws RemoteException {
         return bank.createAccount(AccountTests.ACCOUNT_IDS.get(random.nextInt(0, AccountTests.ACCOUNT_IDS.size())));
@@ -63,20 +63,23 @@ public class ActualBankTests {
     @BeforeEach
     public void createBanks() {
         try {
-            banks.clear();
             for (int i = 0; i < rmiRegistriesPorts.size(); i++) {
-                var port = rmiRegistriesPorts.get(i);
-                banks.add(new RemoteBank(port));
-                Bank bank = banks.get(i);
-                UnicastRemoteObject.exportObject(bank, port);
-                try {
-                    Naming.rebind(String.format("//localhost:%d/bank", port), bank);
-                } catch (MalformedURLException e) {
-                    throw new AssertionError("Wrong hardcoded URL");
-                }
+                recreateBank(i, RmiAccountsPolicy.values()[random.nextInt(0, 4)]);
             }
         } catch (RemoteException e) {
             System.out.println("Unexpected remote exception during instantiation, fix your network: " + e.getMessage());
+        }
+    }
+    
+    private static void recreateBank(int portInd, RmiAccountsPolicy policy) throws RemoteException {
+        var port = rmiRegistriesPorts.get(portInd);
+        banks[portInd] = new RemoteBank(rmiRegistriesPorts, policy);
+        Bank bank = banks[portInd];
+        UnicastRemoteObject.exportObject(bank, port);
+        try {
+            Naming.rebind(String.format("//localhost:%d/bank", port), bank);
+        } catch (MalformedURLException e) {
+            throw new AssertionError("Wrong hardcoded URL");
         }
     }
     
@@ -144,7 +147,7 @@ public class ActualBankTests {
     
     @Test
     public void creatingAccountForPersonFromBank() throws RemoteException {
-        Bank bank = banks.getFirst();
+        Bank bank = banks[0];
         var personData = PersonsTests.generateRandomPersonData();
         IRemotePerson person = bank.createPerson(personData.name(), personData.surname(), personData.passport());
         String id = AccountTests.generateRandomAccountId();
@@ -167,7 +170,7 @@ public class ActualBankTests {
     
     @Test
     public void localRemoteTest() throws RemoteException {
-        Bank bank = banks.getFirst();
+        Bank bank = banks[0];
         var personData = PersonsTests.generateRandomPersonData();
         String id = AccountTests.generateRandomAccountId();
         IRemotePerson person = bank.createPerson(personData.name(), personData.surname(), personData.passport());
@@ -189,7 +192,7 @@ public class ActualBankTests {
     
     @Test
     public void localSerializedTest() throws RemoteException {
-        Bank bank = banks.getFirst();
+        Bank bank = banks[0];
         var personData = PersonsTests.generateRandomPersonData();
         String id = AccountTests.generateRandomAccountId();
         IRemotePerson person = bank.createPerson(personData.name(), personData.surname(), personData.passport());
@@ -203,7 +206,7 @@ public class ActualBankTests {
     
     @Test
     public void remoteTest() throws RemoteException {
-        Bank bank = banks.getFirst();
+        Bank bank = banks[0];
         var personData = PersonsTests.generateRandomPersonData();
         bank.createPerson(personData.name(), personData.surname(), personData.passport());
         
