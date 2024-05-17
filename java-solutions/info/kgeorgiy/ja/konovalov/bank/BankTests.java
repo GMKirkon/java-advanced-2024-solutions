@@ -3,7 +3,7 @@ package info.kgeorgiy.ja.konovalov.bank;
 //import info.kgeorgiy.java.advanced.base.BaseTest;
 //import info.kgeorgiy.java.advanced.base.BaseTester;
 
-import info.kgeorgiy.java.advanced.base.BaseTester;
+//import info.kgeorgiy.java.advanced.base.BaseTester;
 import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
@@ -38,7 +38,7 @@ public class BankTests {
     
     
     public static void main(String... args) {
-        BaseTester tester = new BaseTester();
+//        BaseTester tester = new BaseTester();
         int total = 0;
         total += test(AccountTests.class);
         total += test(PersonsTests.class);
