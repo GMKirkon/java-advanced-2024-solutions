@@ -11,6 +11,18 @@ module info.kgeorgiy.ja.konovalov {
     requires info.kgeorgiy.java.advanced.iterative;
     requires info.kgeorgiy.java.advanced.crawler;
     requires info.kgeorgiy.java.advanced.hello;
-
+    
     requires java.compiler;
+    requires java.rmi;
+    requires jdk.httpserver;
+    requires org.junit.platform.engine;
+    requires org.junit.platform.launcher;
+    
+    requires transitive org.junit.jupiter.api;
+    
+    exports info.kgeorgiy.ja.konovalov.bank;
+    opens info.kgeorgiy.ja.konovalov.bank to org.junit.platform.launcher;
+    
+    exports info.kgeorgiy.ja.konovalov.bank.account to java.rmi, org.junit.platform.commons;
+    exports info.kgeorgiy.ja.konovalov.bank.person to java.rmi, org.junit.platform.commons;
 }

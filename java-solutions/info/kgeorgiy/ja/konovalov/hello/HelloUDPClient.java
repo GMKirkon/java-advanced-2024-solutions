@@ -25,6 +25,7 @@ public class HelloUDPClient implements HelloClient {
     //holy cow legacy is really evil...
     static private final String regex = "([\\p{IsAlphabetic}-._]+), ([\\p{IsAlphabetic}-._()]+)(\\p{N}+)([-_]+)(\\p{N}+)$";
     static private final Pattern pattern = Pattern.compile(regex);
+    static private final NumberFormat numberFormat = NumberFormat.getNumberInstance();
     
     private final static class ImpossibleToGetAddressException extends RuntimeException {
         ImpossibleToGetAddressException(String host, int port, RuntimeException e) {
@@ -148,29 +149,7 @@ public class HelloUDPClient implements HelloClient {
                         byte[] buffer = getBufferForMessagingWithServer(prefix, requests, numberOfThread, socket);
                         
                         IntStream.range(1, requests + 1).forEach(numberOfRequest -> {
-                            try {
-                                String request = formServerRequest(prefix, numberOfThread, numberOfRequest);
-                                byte[] requestBytes = request.getBytes(StandardCharsets.UTF_8);
-                                
-                                DatagramPacket requestPacket = new DatagramPacket(buffer, requestBytes.length);
-                                DatagramPacket answerPacket = new DatagramPacket(buffer, 0, buffer.length);
-                                
-                                socket.setSoTimeout(DEFAULT_CLIENT_WAITING_FOR_RESPONSE_TIMOUT_TIME_IN_MILLISECONDS);
-                                
-                                String answer = "";
-                                boolean gotCorrectResponse = false;
-                                while (!gotCorrectResponse) {
-                                    getResponseFromServer(requestPacket, buffer, requestBytes, socket, answerPacket);
-                                    
-                                    answer = getStringFromPacket(answerPacket);
-                                    if (checkAnswerForCorrectness(answer, numberOfThread, numberOfRequest)) {
-                                        gotCorrectResponse = true;
-                                    }
-                                }
-                                System.out.printf("Request: %s%nAnswer: %s%n", request, answer);
-                            } catch (IOException e) {
-                                addSuppressedException.accept(e);
-                            }
+                            doSingleRequest(prefix, numberOfThread, numberOfRequest, buffer, socket, addSuppressedException);
                         });
                     } catch (IOException e) {
                         addSuppressedException.accept(e);
@@ -185,6 +164,32 @@ public class HelloUDPClient implements HelloClient {
         }
     }
     
+    private static void doSingleRequest(String prefix, int numberOfThread, int numberOfRequest, byte[] buffer, DatagramSocket socket, Consumer<Exception> addSuppressedException) {
+        try {
+            String request = formServerRequest(prefix, numberOfThread, numberOfRequest);
+            byte[] requestBytes = request.getBytes(StandardCharsets.UTF_8);
+            
+            DatagramPacket requestPacket = new DatagramPacket(buffer, requestBytes.length);
+            DatagramPacket answerPacket = new DatagramPacket(buffer, 0, buffer.length);
+            
+            socket.setSoTimeout(DEFAULT_CLIENT_WAITING_FOR_RESPONSE_TIMOUT_TIME_IN_MILLISECONDS);
+            
+            String answer = "";
+            boolean gotCorrectResponse = false;
+            while (!gotCorrectResponse) {
+                getResponseFromServer(requestPacket, buffer, requestBytes, socket, answerPacket);
+                
+                answer = getStringFromPacket(answerPacket);
+                if (checkAnswerForCorrectness(answer, numberOfThread, numberOfRequest)) {
+                    gotCorrectResponse = true;
+                }
+            }
+            System.out.printf("Request: %s%nAnswer: %s%n", request, answer);
+        } catch (IOException e) {
+            addSuppressedException.accept(e);
+        }
+    }
+    
     private static boolean checkAnswerForCorrectness(String answer, int numberOfThread, int numberOfRequest) {
         Matcher matcher = pattern.matcher(answer);
         
@@ -193,8 +198,8 @@ public class HelloUDPClient implements HelloClient {
             String gotAsNumberOfRequest = matcher.group(5);
             
             try {
-                int gotNumberOfRequests = NumberFormat.getNumberInstance().parse(gotAsNumberOfRequest).intValue();
-                int gotNumberOfThreads = NumberFormat.getNumberInstance().parse(gotAsNumberOfThreads).intValue();
+                int gotNumberOfRequests = numberFormat.parse(gotAsNumberOfRequest).intValue();
+                int gotNumberOfThreads = numberFormat.parse(gotAsNumberOfThreads).intValue();
                 
                 return gotNumberOfRequests == numberOfRequest &&
                        gotNumberOfThreads == numberOfThread;
