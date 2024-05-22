@@ -40,20 +40,6 @@ public abstract class AbstractPerson implements Person {
     }
     
     @Override
-    public void addAccount(Account account, String bankId) throws RemoteException {
-        // :NOTE: сделать через bank
-        String fullId = getAccountActualId(bankId);
-        
-        if (!Objects.equals(account.getId(), fullId)) {
-            throw new IllegalArgumentException("Provided account was not created for that person, illegal id");
-        }
-        
-        synchronized (allPersonsAccounts) {
-            allPersonsAccounts.put(fullId, account);
-        }
-    }
-    
-    @Override
     public Account getAccount(String accountBankId) {
         return allPersonsAccounts.get(getAccountActualId(accountBankId));
     }

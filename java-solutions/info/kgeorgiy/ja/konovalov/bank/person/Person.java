@@ -1,6 +1,7 @@
 package info.kgeorgiy.ja.konovalov.bank.person;
 
 import info.kgeorgiy.ja.konovalov.bank.account.Account;
+import info.kgeorgiy.ja.konovalov.bank.account.IRemoteAccount;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -13,7 +14,7 @@ public interface Person extends Remote {
     
     String getPassportNumber() throws RemoteException;
     
-    void addAccount(Account account, String fullId) throws RemoteException;
+    IRemoteAccount addAccount(String fullId) throws RemoteException;
     
     Map<String, Account> getAllAccounts() throws RemoteException;
     

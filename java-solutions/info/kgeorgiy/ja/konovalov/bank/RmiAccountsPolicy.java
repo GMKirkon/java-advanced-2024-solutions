@@ -27,9 +27,11 @@ public enum RmiAccountsPolicy {
                 public int getPort() {
                     if (currentCounter == CHUNK) {
                         pointer = (pointer + 1) % ports.size();
-                        currentCounter = 1;
+                        currentCounter = 0;
                     }
-                    return ports.get(pointer);
+                    int ans = ports.get(pointer);
+                    ++currentCounter;
+                    return ans;
                 }
             };
         }
@@ -63,7 +65,5 @@ public enum RmiAccountsPolicy {
         }
     };
     
-    public RmiRegistriesScheduler getScheduler(List<Integer> ports) {
-        return SINGLE.getScheduler(ports);
-    }
+    public abstract RmiRegistriesScheduler getScheduler(List<Integer> ports);
 }

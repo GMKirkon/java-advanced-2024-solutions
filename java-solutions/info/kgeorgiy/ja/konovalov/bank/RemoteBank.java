@@ -1,7 +1,10 @@
 package info.kgeorgiy.ja.konovalov.bank;
 
 import info.kgeorgiy.ja.konovalov.bank.account.Account;
+import info.kgeorgiy.ja.konovalov.bank.account.IRemoteAccount;
+import info.kgeorgiy.ja.konovalov.bank.account.InsufficientFundsException;
 import info.kgeorgiy.ja.konovalov.bank.account.RemoteAccount;
+import info.kgeorgiy.ja.konovalov.bank.account.tooMuchMoneyException;
 import info.kgeorgiy.ja.konovalov.bank.person.IRemotePerson;
 import info.kgeorgiy.ja.konovalov.bank.person.LocalPerson;
 import info.kgeorgiy.ja.konovalov.bank.person.Person;
@@ -9,12 +12,21 @@ import info.kgeorgiy.ja.konovalov.bank.person.RemotePerson;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Stream;
 
 public class RemoteBank implements Bank {
-    private final ConcurrentMap<String, Account> accounts = new ConcurrentHashMap<>();
+    private static final Comparator<IRemoteAccount> accountOrder = (IRemoteAccount a, IRemoteAccount b) -> {
+        try {
+            return a.getId().compareTo(b.getId());
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    };
+    private final ConcurrentMap<String, IRemoteAccount> accounts = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, RemotePerson> remotePersons = new ConcurrentHashMap<>();
     private final RmiRegistriesScheduler scheduler;
     
@@ -27,27 +39,55 @@ public class RemoteBank implements Bank {
     }
     
     @Override
-    public Account createAccount(final String id) throws RemoteException {
+    public IRemoteAccount createAccount(final String id) throws RemoteException {
         System.out.printf("Creating account %s%n", id);
         if (accounts.get(id) != null) {
             throw new IllegalArgumentException(String.format("account with provided id:%s is already created", id));
         }
         
-        final Account account = new RemoteAccount(id);
-        if (accounts.putIfAbsent(id, account) == null) {
-            UnicastRemoteObject.exportObject(account, scheduler.getAccountPort());
-            return account;
-        } else {
-            return getAccount(id);
-        }
+        final IRemoteAccount account = new RemoteAccount(id);
+        accounts.put(id, account);
+        UnicastRemoteObject.exportObject(account, scheduler.getAccountPort());
+        return account;
     }
     
     @Override
-    public Account createAccountForPerson(final String id, final Person person) throws RemoteException {
+    public IRemoteAccount createAccountForPerson(final String id, final Person person) throws RemoteException {
         String fullId = String.format("%s:%s", person.getPassportNumber(), id);
-        var account = createAccount(fullId);
-        person.addAccount(account, id);
+        IRemoteAccount account = createAccount(fullId);
         return account;
+    }
+    
+    @Override
+    public void transfer(IRemoteAccount from, IRemoteAccount to, int amount) throws RemoteException {
+        if (!accounts.containsValue(from)) {
+            throw new IllegalArgumentException("Cannot transfer from account that is not registered in the bank");
+        }
+        
+        if (!accounts.containsValue(to)) {
+            throw new IllegalArgumentException("Cannot transfer to account that is not registered in the bank");
+        }
+        
+        if (from == to) {
+            throw new IllegalArgumentException("Transfers to the same account are not allowed");
+        }
+        
+        if (amount < 0) {
+            throw new IllegalArgumentException("Could not transfer negative amount of money");
+        }
+        
+        var accounts = Stream.of(from, to).sorted(accountOrder).toList();
+        synchronized (accounts.get(0)) {
+            synchronized (accounts.get(1)) {
+                from.addAmount(-amount);
+                try {
+                    to.addAmount(amount);
+                } catch (tooMuchMoneyException e) {
+                    from.addAmount(amount);
+                    throw e;
+                }
+            }
+        }
     }
     
     @Override
@@ -59,7 +99,7 @@ public class RemoteBank implements Bank {
         }
         
         int port = scheduler.getPersonPort();
-        var person = new RemotePerson(name, surname, passportNumber);
+        var person = new RemotePerson(name, surname, passportNumber, this);
         if (remotePersons.putIfAbsent(passportNumber, person) == null) {
             UnicastRemoteObject.exportObject(person, port);
         }
@@ -67,7 +107,7 @@ public class RemoteBank implements Bank {
     }
     
     @Override
-    public Account getAccount(final String id) {
+    public IRemoteAccount getAccount(final String id) {
         System.out.printf("Retrieving account with id: %s%n", id);
         return accounts.get(id);
     }

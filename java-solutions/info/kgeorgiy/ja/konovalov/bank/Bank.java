@@ -1,6 +1,8 @@
 package info.kgeorgiy.ja.konovalov.bank;
 
 import info.kgeorgiy.ja.konovalov.bank.account.Account;
+import info.kgeorgiy.ja.konovalov.bank.account.IRemoteAccount;
+import info.kgeorgiy.ja.konovalov.bank.account.InsufficientFundsException;
 import info.kgeorgiy.ja.konovalov.bank.person.ILocalPerson;
 import info.kgeorgiy.ja.konovalov.bank.person.IRemotePerson;
 import info.kgeorgiy.ja.konovalov.bank.person.LocalPerson;
@@ -34,7 +36,7 @@ public interface Bank extends Remote {
      * @param id account id
      * @return account with specified identifier or {@code null} if such account does not exist.
      */
-    Account getAccount(String id) throws RemoteException;
+    IRemoteAccount getAccount(String id) throws RemoteException;
     
     /**
      * Returns person by passport Number
@@ -56,5 +58,16 @@ public interface Bank extends Remote {
      * @param person person for whom the account is being created
      * @return created account for person
      */
-    Account createAccountForPerson(final String id, final Person person) throws RemoteException;
+    IRemoteAccount createAccountForPerson(final String id, final Person person) throws RemoteException;
+    
+    /**
+     * Does the transaction between accounts
+     *
+     * @param from account from which to transfer the money
+     * @param to  account where to transfer the money
+     * @param delta amount to transfer from the account
+     * @throws InsufficientFundsException in case not enough money on the account
+     * @throws IllegalArgumentException   if you try to transfer negative amount of money
+     */
+    void transfer(IRemoteAccount from, IRemoteAccount to, int delta) throws RemoteException;
 }

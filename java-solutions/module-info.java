@@ -23,6 +23,7 @@ module info.kgeorgiy.ja.konovalov {
     exports info.kgeorgiy.ja.konovalov.bank;
     opens info.kgeorgiy.ja.konovalov.bank to org.junit.platform.launcher;
     
-    exports info.kgeorgiy.ja.konovalov.bank.account to java.rmi, org.junit.platform.commons;
     exports info.kgeorgiy.ja.konovalov.bank.person to java.rmi, org.junit.platform.commons;
+    exports info.kgeorgiy.ja.konovalov.bank.account;
+    opens info.kgeorgiy.ja.konovalov.bank.account to org.junit.platform.launcher;
 }
