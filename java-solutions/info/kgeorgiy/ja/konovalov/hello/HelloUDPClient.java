@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 public class HelloUDPClient implements HelloClient {
-    static private final int DEFAULT_CLIENT_WAITING_FOR_RESPONSE_TIMOUT_TIME_IN_MILLISECONDS = 45;
+    static private final int DEFAULT_CLIENT_WAITING_FOR_RESPONSE_TIMOUT_TIME_IN_MILLISECONDS = 20;
     //holy cow legacy is really evil...
     static private final String regex = "([\\p{IsAlphabetic}-._]+), ([\\p{IsAlphabetic}-._()]+)(\\p{N}+)([-_]+)(\\p{N}+)$";
     static private final Pattern pattern = Pattern.compile(regex);
