@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 public abstract class AbstractHelloUDPClient implements HelloClient {
     
     static protected final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
-    static protected final int DEFAULT_CLIENT_WAITING_FOR_RESPONSE_TIMOUT_TIME_IN_MILLISECONDS = 45;
+    static protected final int DEFAULT_CLIENT_WAITING_FOR_RESPONSE_TIMOUT_TIME_IN_MILLISECONDS = 120;
     
     //holy cow legacy is really evil...
     static protected final String regex = "([\\p{IsAlphabetic}-._]+), ([\\p{IsAlphabetic}-._()]+)(\\p{N}+)([-_]+)(\\p{N}+)$";
@@ -59,22 +59,22 @@ public abstract class AbstractHelloUDPClient implements HelloClient {
                 int gotNumberOfRequests = numberFormat.parse(gotAsNumberOfRequest).intValue();
                 int gotNumberOfThread = numberFormat.parse(gotAsNumberOfThreads).intValue();
                 
-                /*System.err.printf(
+                System.err.printf(
                         "Expected digits: %d %d, got digits: %d %d%n",
                         numberOfRequest,
                         numberOfThread,
                         gotNumberOfRequests,
                         gotNumberOfThread
-                );*/
+                );
                 
                 return gotNumberOfRequests == numberOfRequest &&
                        gotNumberOfThread == numberOfThread;
             } catch (ParseException ignored) {
-                //                System.err.printf("COULD NOT MATCH: %s%n", answer);
+                System.err.printf("COULD NOT MATCH: %s%n", answer);
                 return false;
             }
         } else {
-            //            System.err.printf("DOES NOT MATCH: %s %n", answer);
+            System.err.printf("DOES NOT MATCH: %s %n", answer);
             return false;
         }
     }

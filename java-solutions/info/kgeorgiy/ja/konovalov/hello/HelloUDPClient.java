@@ -36,6 +36,7 @@ public class HelloUDPClient extends AbstractHelloUDPClient {
                 socket.receive(answerPacket);
                 receivedSomething = true;
             } catch (SocketTimeoutException ignored) {
+                System.out.println("TIMEOUT: " + ignored.getMessage());
             }
         }
     }
@@ -73,7 +74,7 @@ public class HelloUDPClient extends AbstractHelloUDPClient {
                 }
             }
             printResponse(request, answer);
-        } catch (IOException e) {
+        } catch (Exception e) {
             addSuppressedException.accept(e);
         }
     }
@@ -85,7 +86,7 @@ public class HelloUDPClient extends AbstractHelloUDPClient {
         Consumer<Exception> addSuppressedException = suppressingConsumer(requestException);
         
         try (ExecutorService executorService = Executors.newFixedThreadPool(threads)) {
-            IntStream.range(1, threads + 1).parallel().forEach(numberOfThread -> {
+            IntStream.range(1, threads + 1).forEach(numberOfThread -> {
                 executorService.submit(() -> {
                     try (DatagramSocket socket = new DatagramSocket()) {
                         socket.connect(address);
