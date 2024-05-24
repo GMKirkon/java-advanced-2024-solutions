@@ -34,9 +34,9 @@ public class HelloUDPClient extends AbstractHelloUDPClient {
                 socket.send(requestPacket);
                 
                 socket.receive(answerPacket);
+                
                 receivedSomething = true;
-            } catch (SocketTimeoutException ignored) {
-                System.out.println("TIMEOUT: " + ignored.getMessage());
+            } catch (Exception ignored) {
             }
         }
     }
