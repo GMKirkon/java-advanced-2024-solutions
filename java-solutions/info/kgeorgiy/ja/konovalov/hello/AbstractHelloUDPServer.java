@@ -29,7 +29,8 @@ public abstract class AbstractHelloUDPServer implements NewHelloServer {
         NOT_STARTED,
         WORKING,
         DOING_NOTHING_EMPTY,
-        CLOSING
+        CLOSING,
+        CLOSED
     }
     
     protected void chengeServerStatusDueToStart(int threads) {
@@ -37,7 +38,7 @@ public abstract class AbstractHelloUDPServer implements NewHelloServer {
         
         switch (currentState) {
             case WORKING, DOING_NOTHING_EMPTY -> throw new IllegalStateException("Server is already running");
-            case CLOSING -> throw new IllegalStateException("Server already finished working and could not be restarted");
+            case CLOSING, CLOSED -> throw new IllegalStateException("Server already finished working and could not be restarted");
         }
     }
     
@@ -158,6 +159,6 @@ public abstract class AbstractHelloUDPServer implements NewHelloServer {
         }
         
         closeAllRunningThreads();
-        currentState = serverStates.NOT_STARTED;
+        currentState = serverStates.CLOSED;
     }
 }

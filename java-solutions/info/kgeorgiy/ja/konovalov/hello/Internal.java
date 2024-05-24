@@ -49,15 +49,13 @@ public class Internal {
     }
     
     static Consumer<Exception> suppressingConsumer(AtomicReference<Exception> exception) {
-        return (Exception e) -> {
-            exception.getAndUpdate(currentException -> {
-                if (currentException == null) {
-                    return e;
-                }
-                currentException.addSuppressed(e);
-                return currentException;
-            });
-        };
+        return (Exception e) -> exception.getAndUpdate(currentException -> {
+            if (currentException == null) {
+                return e;
+            }
+            currentException.addSuppressed(e);
+            return currentException;
+        });
     }
     
     static void unwrapSuppressedException(Exception[] singleException, boolean doesThrow) {

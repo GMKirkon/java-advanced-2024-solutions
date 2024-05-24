@@ -81,11 +81,8 @@ public class HelloUDPClient extends AbstractHelloUDPClient {
     @Override
     protected final void run(SocketAddress address, String prefix, int threads, int requests) {
         checkThreadsRequests(threads, requests);
-        
         AtomicReference<Exception> requestException = new AtomicReference<>();
-        
         Consumer<Exception> addSuppressedException = suppressingConsumer(requestException);
-        
         
         try (ExecutorService executorService = Executors.newFixedThreadPool(threads)) {
             IntStream.range(1, threads + 1).forEach(numberOfThread -> {

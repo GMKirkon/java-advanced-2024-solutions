@@ -159,4 +159,15 @@ public class HelloUDPNonblockingServer extends AbstractHelloUDPServer {
         closeWithExceptionConsumer(selector, addSuppressedException);
         closeDatagramChannels(datagramChannels, addSuppressedException);
     }
+    
+    /**
+     * Gets the total accumulated exception for server
+     * @return exception after server was closed
+     */
+    public Exception getTotalNonBlockingException() {
+        if (currentState != serverStates.CLOSED) {
+            return null;
+        }
+        return totalException.get();
+    }
 }
