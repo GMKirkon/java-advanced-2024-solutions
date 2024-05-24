@@ -1,61 +1,18 @@
 package info.kgeorgiy.ja.konovalov.hello;
 
-import info.kgeorgiy.java.advanced.hello.HelloClient;
-
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
-import java.text.NumberFormat;
-import java.text.ParseException;
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
-public class HelloUDPClient implements HelloClient {
-    static private final int DEFAULT_CLIENT_WAITING_FOR_RESPONSE_TIMOUT_TIME_IN_MILLISECONDS = 10;
-    //holy cow legacy is really evil...
-    static private final String regex = "([\\p{IsAlphabetic}-._]+), ([\\p{IsAlphabetic}-._()]+)(\\p{N}+)([-_]+)(\\p{N}+)$";
-    static private final Pattern pattern = Pattern.compile(regex);
-    
-    private final static class ImpossibleToGetAddressException extends RuntimeException {
-        ImpossibleToGetAddressException(String host, int port, RuntimeException e) {
-            super(String.format(
-                    "Could not create address for provided host: %s and port: %d%n, with error: %s",
-                    host,
-                    port,
-                    e.getMessage()
-            ));
-        }
-    }
-    
-    private static String formServerRequest(String prefix, int numberOfThread, int numberOfQuery) {
-        return String.format("%s%d_%d", prefix, numberOfThread, numberOfQuery);
-    }
-    
-    /**
-     * Creates InetSocketAddress from provided host and port
-     *
-     * @param host host for address
-     * @param port port for address
-     * @return created InetSocketAddress
-     * @throws ImpossibleToGetAddressException in case its impossible to get corrent InetSocketAddress for provided host and port
-     */
-    private static InetSocketAddress getInetSocketAddress(String host, int port) throws ImpossibleToGetAddressException {
-        try {
-            return new InetSocketAddress(host, port);
-        } catch (SecurityException | IllegalArgumentException e) {
-            throw new ImpossibleToGetAddressException(host, port, e);
-        }
-    }
+public class HelloUDPClient extends AbstractHelloUDPClient {
     
     private static String getStringFromPacket(DatagramPacket answerPacket) {
         return new String(
@@ -66,7 +23,7 @@ public class HelloUDPClient implements HelloClient {
         );
     }
     
-    private static void getResponseFromServer(DatagramPacket requestPacket, byte[] buffer, byte[] requestBytes, DatagramSocket socket, DatagramPacket answerPacket) {
+    private static void getResponseFromServer(DatagramPacket requestPacket, byte[] buffer, byte[] requestBytes, DatagramSocket socket, DatagramPacket answerPacket) throws IOException {
         boolean receivedSomething = false;
         while (!receivedSomething) {
             try {
@@ -76,56 +33,52 @@ public class HelloUDPClient implements HelloClient {
                 
                 socket.receive(answerPacket);
                 receivedSomething = true;
-            } catch (IOException ignored) {
+            } catch (SocketTimeoutException ignored) {
             }
         }
     }
     
-    private static byte[] getBufferForMessagingWithServer(String prefix, int requests, int numberOfThread, DatagramSocket socket) throws SocketException {
-        return new byte[Integer.max(
-                socket.getReceiveBufferSize(),
-                formServerRequest(prefix, numberOfThread, requests).getBytes(StandardCharsets.UTF_8).length
-        )];
-    }
-    
     public static void main(String... args) {
-        Objects.requireNonNull(
-                args,
-                "first of all main is method to access HelloUDPClient from outside java, second, do not provide null as arguments"
-        );
-        if (args.length != 5) {
-            printUsage();
-            return;
-        }
-        
-        Integer port = Internal.parsePositiveInteger(args[1], "port");
-        String prefix = args[2];
-        Integer threads = Internal.parsePositiveInteger(args[3], "threads");
-        Integer requests = Internal.parsePositiveInteger(args[4], "requests");
-        
-        if (port == null) {
-            printUsage();
-            return;
-        }
-        
-        SocketAddress address = InetSocketAddress.createUnresolved(args[0], port);
-        
-        if (threads == null || requests == null) {
-            printUsage();
-            return;
-        }
-        run(address, prefix, threads, requests);
+        var client = new HelloUDPClient();
+        client.mainImpl(args);
     }
     
-    private static void printUsage() {
-        System.out.println("Usage: <ip/name> <port> <prefix> <threads> <requests>");
-        System.out.println("threads and requests should be positive, ip should be correct");
+    private static void doSingleRequest(String prefix, int numberOfThread, int numberOfRequest, byte[] buffer, DatagramSocket socket, Consumer<Exception> addSuppressedException) {
+        try {
+            String request = formServerRequest(prefix, numberOfThread, numberOfRequest);
+            byte[] requestBytes = request.getBytes(StandardCharsets.UTF_8);
+            
+            DatagramPacket requestPacket = new DatagramPacket(buffer, requestBytes.length);
+            DatagramPacket answerPacket = new DatagramPacket(buffer, 0, buffer.length);
+            
+            socket.setSoTimeout(DEFAULT_CLIENT_WAITING_FOR_RESPONSE_TIMOUT_TIME_IN_MILLISECONDS);
+            
+            String answer = "";
+            boolean gotCorrectResponse = false;
+            while (!gotCorrectResponse) {
+                getResponseFromServer(requestPacket, buffer, requestBytes, socket, answerPacket);
+                
+                answer = getStringFromPacket(answerPacket);
+                if (checkAnswerForCorrectness(answer, numberOfThread, numberOfRequest)) {
+                    gotCorrectResponse = true;
+                } else {
+                    System.err.printf(
+                            "NOT CORRECT caught in thread %d in query %d : %s%n",
+                            numberOfThread,
+                            numberOfRequest,
+                            answer
+                    );
+                }
+            }
+            printResponse(request, answer);
+        } catch (IOException e) {
+            addSuppressedException.accept(e);
+        }
     }
     
-    
-    private static void run(SocketAddress address, String prefix, int threads, int requests) {
-        Internal.checkForPositive(threads, "could not sends requests in non positive number of threads", true);
-        Internal.checkForPositive(requests, "could not sends non positive number of requests", true);
+    @Override
+    protected final void run(SocketAddress address, String prefix, int threads, int requests) {
+        checkThreadsRequests(threads, requests);
         
         AtomicReference<Exception> requestException = new AtomicReference<>();
         
@@ -170,66 +123,8 @@ public class HelloUDPClient implements HelloClient {
         }
     }
     
-    private static void doSingleRequest(String prefix, int numberOfThread, int numberOfRequest, byte[] buffer, DatagramSocket socket, Consumer<Exception> addSuppressedException) {
-        try {
-            String request = formServerRequest(prefix, numberOfThread, numberOfRequest);
-            byte[] requestBytes = request.getBytes(StandardCharsets.UTF_8);
-            
-            DatagramPacket requestPacket = new DatagramPacket(buffer, requestBytes.length);
-            DatagramPacket answerPacket = new DatagramPacket(buffer, 0, buffer.length);
-            
-            socket.setSoTimeout(DEFAULT_CLIENT_WAITING_FOR_RESPONSE_TIMOUT_TIME_IN_MILLISECONDS);
-            
-            String answer = "";
-            boolean gotCorrectResponse = false;
-            while (!gotCorrectResponse) {
-                getResponseFromServer(requestPacket, buffer, requestBytes, socket, answerPacket);
-                
-                answer = getStringFromPacket(answerPacket);
-                if (checkAnswerForCorrectness(answer, numberOfThread, numberOfRequest)) {
-                    gotCorrectResponse = true;
-                } else {
-                    System.err.printf(
-                            "NOT CORRECT caught in thread %d in query %d : %s%n",
-                            numberOfThread,
-                            numberOfRequest,
-                            answer
-                    );
-                }
-            }
-            System.out.printf("Request: %s%nAnswer: %s%n", request, answer);
-        } catch (IOException e) {
-            addSuppressedException.accept(e);
-        }
-    }
-    
-    private static boolean checkAnswerForCorrectness(String answer, int numberOfThread, int numberOfRequest) {
-        Matcher matcher = pattern.matcher(answer);
-        NumberFormat numberFormat = NumberFormat.getNumberInstance();
-        
-        if (matcher.matches()) {
-            String gotAsNumberOfThreads = matcher.group(3);
-            String gotAsNumberOfRequest = matcher.group(5);
-            
-            try {
-                int gotNumberOfRequests = numberFormat.parse(gotAsNumberOfRequest).intValue();
-                int gotNumberOfThreads = numberFormat.parse(gotAsNumberOfThreads).intValue();
-                
-                return gotNumberOfRequests == numberOfRequest &&
-                       gotNumberOfThreads == numberOfThread;
-            } catch (ParseException ignored) {
-                System.err.printf("COULD NOT MATCH: %s%n", answer);
-                return false;
-            }
-        } else {
-            System.err.printf("DOES NOT MATCH: %s %n", answer);
-            return false;
-        }
-    }
-    
     @Override
-    public void run(String host, int port, String prefix, int threads, int requests) {
-        InetSocketAddress address = getInetSocketAddress(host, port);
-        run(address, prefix, threads, requests);
+    protected AbstractHelloUDPClient getClient() {
+        return new HelloUDPClient();
     }
 }

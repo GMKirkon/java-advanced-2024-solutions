@@ -20,26 +20,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class HelloUDPServer implements NewHelloServer {
-    static private final Charset SERVER_CHARSET = StandardCharsets.UTF_8;
-    static private final int HANDLER_BUFFER_SIZE = 1024;
-    private final ConcurrentLinkedQueue<Exception> receivingExceptions = new ConcurrentLinkedQueue<>();
-    private final ConcurrentLinkedQueue<Exception> sendingExceptions = new ConcurrentLinkedQueue<>();
-    private final Timer timer;
+public class HelloUDPServer extends AbstractHelloUDPServer {
     private final List<PortListener> listeners = new ArrayList<>();
     private ExecutorService portListenersPool;
-    private ExecutorService queryHandlersPool;
-    private volatile serverStates currentState = serverStates.NOT_STARTED;
-    
-    /**
-     * enum for server states, by contract server could only be run once
-     */
-    private enum serverStates {
-        NOT_STARTED,
-        WORKING,
-        DOING_NOTHING_EMPTY,
-        CLOSING
-    }
     
     /**
      * TimerTask to close Server after some timeout
@@ -131,8 +114,7 @@ public class HelloUDPServer implements NewHelloServer {
      * @param timeoutInSeconds time until executing close()
      */
     public HelloUDPServer(int timeoutInSeconds) {
-        timer = new Timer();
-        timer.schedule(new SelfCloseTask(), timeoutInSeconds * 1000L);
+        super(timeoutInSeconds);
     }
     
     
@@ -140,53 +122,34 @@ public class HelloUDPServer implements NewHelloServer {
      * Creates Server without timeout
      */
     public HelloUDPServer() {
-        timer = null;
+        super();
     }
     
     public static void main(String... args) {
-        if (args == null) {
-            System.out.println("Provided args should not be null");
-            printUsage();
-            return;
+        try(var server = new HelloUDPServer()) {
+            server.mainImpl(args);
         }
-        
-        if (args.length != 2) {
-            printUsage();
-        }
-        
-        Integer port = Internal.parsePositiveInteger(args[0], "port ");
-        Integer threads = Internal.parsePositiveInteger(args[1], "number of threads ");
-        if (port == null || threads == null) {
-            return;
-        }
-        
-        // yes, try without resources since wanna run server, but not close it just after the start
-        var server = new HelloUDPServer();
-        server.start(port, threads);
     }
     
-    private static void printUsage() {
-        System.out.println("Usage: <port> <number of handlers>");
+    @Override
+    protected AbstractHelloUDPServer getServer() {
+        return new HelloUDPServer();
+    }
+    
+    @Override
+    protected AbstractHelloUDPServer getServer(int timeout) {
+        return new HelloUDPServer(timeout);
     }
     
     @Override
     public void start(int threads, Map<Integer, String> ports) {
-        switch (currentState) {
-            case WORKING, DOING_NOTHING_EMPTY -> throw new IllegalStateException("Server is already running");
-            case CLOSING -> throw new IllegalStateException("Server already finished working and could not be restarted");
-        }
-        
-        
-        if (ports.isEmpty()) {
-            currentState = serverStates.DOING_NOTHING_EMPTY;
+        startHelper(threads, ports);
+        if (currentState == serverStates.DOING_NOTHING_EMPTY) {
             return;
         }
         
-        currentState = serverStates.WORKING;
         createListeners(ports);
-        
         portListenersPool = Executors.newFixedThreadPool(ports.size());
-        queryHandlersPool = Executors.newFixedThreadPool(threads);
         
         for (var listener : listeners) {
             portListenersPool.submit(listener::listen);
@@ -221,55 +184,11 @@ public class HelloUDPServer implements NewHelloServer {
     }
     
     
-    private void closeIgnoringAllRunningThreads() {
-        currentState = serverStates.CLOSING;
-        if (timer != null) {
-            timer.cancel();
-            timer.purge();
-        }
-    }
-    
-    private void closeAllRunningThreads() {
+    @Override
+    protected void closeAllRunningThreads() {
         listeners.forEach(x -> x.socket.close());
         listeners.clear();
         queryHandlersPool.close();
         portListenersPool.close();
-    }
-    
-    @Override
-    public void close() {
-        if (currentState == serverStates.DOING_NOTHING_EMPTY) {
-            closeIgnoringAllRunningThreads();
-            return;
-        }
-        
-        closeIgnoringAllRunningThreads();
-        closeAllRunningThreads();
-        currentState = serverStates.NOT_STARTED;
-    }
-    
-    /**
-     * Returns list of exceptions happened during receiving data, if server is still running returns null
-     *
-     * @return List of receiving exceptions that happened during last server session
-     */
-    public List<Exception> getReceivingExceptions() {
-        return getExceptions(receivingExceptions);
-    }
-    
-    private List<Exception> getExceptions(Collection<Exception> exceptions) {
-        if (currentState != serverStates.CLOSING) {
-            return null;
-        }
-        return exceptions.stream().toList();
-    }
-    
-    /**
-     * Returns list of exceptions happened during sending data, if server is still running returns null
-     *
-     * @return List of sending exceptions that happened during last server session
-     */
-    public List<Exception> getSendingExceptions() {
-        return getExceptions(sendingExceptions);
     }
 }

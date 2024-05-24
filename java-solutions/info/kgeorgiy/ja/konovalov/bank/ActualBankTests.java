@@ -514,7 +514,7 @@ public class ActualBankTests {
         Bank bank1 = banks[0];
         Bank bank2 = banks[1];
         
-        String id = "$guranteedNotGeneratedStringID";
+        String id = generateNotInitializedAccountId();
         
         var account1 = bank1.createAccount(id);
         var personData = generateNotInitializedPersonData();
