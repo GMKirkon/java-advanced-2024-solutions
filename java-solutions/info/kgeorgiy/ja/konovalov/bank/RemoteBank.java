@@ -2,7 +2,7 @@ package info.kgeorgiy.ja.konovalov.bank;
 
 import info.kgeorgiy.ja.konovalov.bank.account.IRemoteAccount;
 import info.kgeorgiy.ja.konovalov.bank.account.RemoteAccount;
-import info.kgeorgiy.ja.konovalov.bank.account.tooMuchMoneyException;
+import info.kgeorgiy.ja.konovalov.bank.account.TooMuchMoneyException;
 import info.kgeorgiy.ja.konovalov.bank.person.LocalPerson;
 import info.kgeorgiy.ja.konovalov.bank.person.Person;
 import info.kgeorgiy.ja.konovalov.bank.person.RemotePerson;
@@ -79,7 +79,7 @@ public class RemoteBank implements Bank {
                 from.addAmount(-amount);
                 try {
                     to.addAmount(amount);
-                } catch (tooMuchMoneyException e) {
+                } catch (TooMuchMoneyException e) {
                     from.addAmount(amount);
                     throw e;
                 }

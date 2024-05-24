@@ -46,7 +46,7 @@ public class AbstractAccount implements Account {
             throw new InsufficientFundsException(this.amount + added);
         }
         if (added > 0 &&  Integer.MAX_VALUE - added < this.amount) {
-            throw new tooMuchMoneyException(this.amount, added);
+            throw new TooMuchMoneyException(this.amount, added);
         }
         this.amount += added;
     }

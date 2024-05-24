@@ -59,22 +59,22 @@ public abstract class AbstractHelloUDPClient implements HelloClient {
                 int gotNumberOfRequests = numberFormat.parse(gotAsNumberOfRequest).intValue();
                 int gotNumberOfThread = numberFormat.parse(gotAsNumberOfThreads).intValue();
                 
-                System.err.printf(
+                /*System.err.printf(
                         "Expected digits: %d %d, got digits: %d %d%n",
                         numberOfRequest,
                         numberOfThread,
                         gotNumberOfRequests,
                         gotNumberOfThread
-                );
+                );*/
                 
                 return gotNumberOfRequests == numberOfRequest &&
                        gotNumberOfThread == numberOfThread;
             } catch (ParseException ignored) {
-                System.err.printf("COULD NOT MATCH: %s%n", answer);
+                //                System.err.printf("COULD NOT MATCH: %s%n", answer);
                 return false;
             }
         } else {
-            System.err.printf("DOES NOT MATCH: %s %n", answer);
+            //            System.err.printf("DOES NOT MATCH: %s %n", answer);
             return false;
         }
     }

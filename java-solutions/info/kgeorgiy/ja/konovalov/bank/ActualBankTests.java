@@ -1,7 +1,7 @@
 package info.kgeorgiy.ja.konovalov.bank;
 
 import info.kgeorgiy.ja.konovalov.bank.account.*;
-import info.kgeorgiy.ja.konovalov.bank.account.tooMuchMoneyException;
+import info.kgeorgiy.ja.konovalov.bank.account.TooMuchMoneyException;
 import info.kgeorgiy.ja.konovalov.bank.person.ILocalPerson;
 import info.kgeorgiy.ja.konovalov.bank.person.IRemotePerson;
 import info.kgeorgiy.ja.konovalov.bank.person.LocalPerson;
@@ -731,7 +731,7 @@ public class ActualBankTests {
         Assertions.assertEquals(account1.associatedAccount.getAmount(), 2_000_000_000);
         
         
-        Assertions.assertThrows(tooMuchMoneyException.class, () -> account1.associatedAccount.addAmount(1_000_000_000));
+        Assertions.assertThrows(TooMuchMoneyException.class, () -> account1.associatedAccount.addAmount(1_000_000_000));
     }
     
     @Test
@@ -759,7 +759,7 @@ public class ActualBankTests {
         account2.addAmount(1_000_000_000);
         
         Assertions.assertThrows(
-                tooMuchMoneyException.class,
+                TooMuchMoneyException.class,
                 () -> bank.transfer(account1, account2, 2_000_000_000)
         );
     }
