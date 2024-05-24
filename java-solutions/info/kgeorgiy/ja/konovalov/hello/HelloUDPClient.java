@@ -85,7 +85,7 @@ public class HelloUDPClient extends AbstractHelloUDPClient {
         Consumer<Exception> addSuppressedException = suppressingConsumer(requestException);
         
         try (ExecutorService executorService = Executors.newFixedThreadPool(threads)) {
-            IntStream.range(1, threads + 1).forEach(numberOfThread -> {
+            IntStream.range(1, threads + 1).parallel().forEach(numberOfThread -> {
                 executorService.submit(() -> {
                     try (DatagramSocket socket = new DatagramSocket()) {
                         socket.connect(address);

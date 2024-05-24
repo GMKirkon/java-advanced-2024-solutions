@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 public abstract class AbstractHelloUDPClient implements HelloClient {
     
     static protected final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
-    static protected final int DEFAULT_CLIENT_WAITING_FOR_RESPONSE_TIMOUT_TIME_IN_MILLISECONDS = 10;
+    static protected final int DEFAULT_CLIENT_WAITING_FOR_RESPONSE_TIMOUT_TIME_IN_MILLISECONDS = 5;
     
     //holy cow legacy is really evil...
     static protected final String regex = "([\\p{IsAlphabetic}-._]+), ([\\p{IsAlphabetic}-._()]+)(\\p{N}+)([-_]+)(\\p{N}+)$";
