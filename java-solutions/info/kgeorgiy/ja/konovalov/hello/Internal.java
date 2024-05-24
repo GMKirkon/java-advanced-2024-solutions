@@ -6,6 +6,7 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -47,12 +48,35 @@ public class Internal {
         };
     }
     
+    static Consumer<Exception> suppressingConsumer(AtomicReference<Exception> exception) {
+        return (Exception e) -> {
+            exception.getAndUpdate(currentException -> {
+                if (currentException == null) {
+                    return e;
+                }
+                currentException.addSuppressed(e);
+                return currentException;
+            });
+        };
+    }
+    
     static void unwrapSuppressedException(Exception[] singleException, boolean doesThrow) {
         if (singleException[0] != null) {
             if (doesThrow) {
                 throw new RuntimeException(singleException[0]);
             } else {
                 System.out.println(singleException[0].getMessage());
+            }
+        }
+    }
+    
+    static void unwrapSuppressedException(AtomicReference<Exception> singleException, boolean doesThrow) {
+        var result = singleException.get();
+        if (result != null) {
+            if (doesThrow) {
+                throw new RuntimeException(result);
+            } else {
+                System.out.println(result.getMessage());
             }
         }
     }

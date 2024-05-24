@@ -12,6 +12,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
+import static info.kgeorgiy.ja.konovalov.hello.Internal.suppressingConsumer;
+
 public class HelloUDPClient extends AbstractHelloUDPClient {
     
     private static String getStringFromPacket(DatagramPacket answerPacket) {
@@ -82,15 +84,7 @@ public class HelloUDPClient extends AbstractHelloUDPClient {
         
         AtomicReference<Exception> requestException = new AtomicReference<>();
         
-        Consumer<Exception> addSuppressedException = (Exception e) -> {
-            requestException.getAndUpdate(currentException -> {
-                if (currentException == null) {
-                    return e;
-                }
-                currentException.addSuppressed(e);
-                return currentException;
-            });
-        };
+        Consumer<Exception> addSuppressedException = suppressingConsumer(requestException);
         
         
         try (ExecutorService executorService = Executors.newFixedThreadPool(threads)) {

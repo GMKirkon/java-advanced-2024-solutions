@@ -1,13 +1,7 @@
 package info.kgeorgiy.ja.konovalov.bank;
 
-//import info.kgeorgiy.java.advanced.base.BaseTest;
-//import info.kgeorgiy.java.advanced.base.BaseTester;
-
-import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
-import org.junit.platform.launcher.TestExecutionListener;
-import org.junit.platform.launcher.TestIdentifier;
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
 import org.junit.platform.launcher.listeners.SummaryGeneratingListener;

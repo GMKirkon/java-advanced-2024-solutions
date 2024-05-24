@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static info.kgeorgiy.ja.konovalov.hello.Internal.addDatagramChannel;
@@ -27,7 +28,7 @@ public class HelloUDPNonblockingServer extends AbstractHelloUDPServer {
     
     private static final int DEFAULT_TIMOUT_IN_MILLISECONDS = 5;
     private static final int MAX_SAVED_RESPONSES = 41;
-    final Exception[] totalException = {null};
+    final AtomicReference<Exception> totalException = new AtomicReference<>();
     final List<DatagramChannel> datagramChannels = new ArrayList<>();
     final Consumer<Exception> addSuppressedException = suppressingConsumer(totalException);
     Selector selector;
@@ -84,7 +85,7 @@ public class HelloUDPNonblockingServer extends AbstractHelloUDPServer {
                 addSuppressedException.accept(e);
             }
             
-            if (totalException[0] != null) {
+            if (totalException.get() != null) {
                 closeDatagramChannels(datagramChannels, addSuppressedException);
                 unwrapSuppressedException(totalException, true);
             }
@@ -152,14 +153,10 @@ public class HelloUDPNonblockingServer extends AbstractHelloUDPServer {
     protected void closeAllRunningThreads() {
         currentState = serverStates.CLOSING;
         
-        final RuntimeException[] total = {null};
-        Consumer<Exception> addSuppressedException = suppressingConsumer(total);
-        
         closeThread(workingThread);
         
         closeWithExceptionConsumer(queryHandlersPool, addSuppressedException);
         closeWithExceptionConsumer(selector, addSuppressedException);
         closeDatagramChannels(datagramChannels, addSuppressedException);
-        unwrapSuppressedException(total, true);
     }
 }
