@@ -1,11 +1,8 @@
 package info.kgeorgiy.ja.konovalov.bank;
 
-import info.kgeorgiy.ja.konovalov.bank.account.Account;
 import info.kgeorgiy.ja.konovalov.bank.account.IRemoteAccount;
-import info.kgeorgiy.ja.konovalov.bank.account.InsufficientFundsException;
 import info.kgeorgiy.ja.konovalov.bank.account.RemoteAccount;
 import info.kgeorgiy.ja.konovalov.bank.account.tooMuchMoneyException;
-import info.kgeorgiy.ja.konovalov.bank.person.IRemotePerson;
 import info.kgeorgiy.ja.konovalov.bank.person.LocalPerson;
 import info.kgeorgiy.ja.konovalov.bank.person.Person;
 import info.kgeorgiy.ja.konovalov.bank.person.RemotePerson;

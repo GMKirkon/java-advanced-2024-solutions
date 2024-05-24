@@ -12,39 +12,39 @@ public abstract class AbstractPerson implements Person {
     protected final String surname;
     protected final String passportNumber;
     protected final ConcurrentHashMap<String, Account> allPersonsAccounts = new ConcurrentHashMap<>();
-    
+
     public AbstractPerson(final String name, final String surname, final String passportNumber) {
         this.name = name;
         this.surname = surname;
         this.passportNumber = passportNumber;
     }
-    
+
     @Override
     public Map<String, Account> getAllAccounts() {
         return allPersonsAccounts;
     }
-    
+
     @Override
     public String getName() {
         return name;
     }
-    
+
     @Override
     public String getSurname() {
         return surname;
     }
-    
+
     @Override
     public String getPassportNumber() {
         return passportNumber;
     }
-    
+
     @Override
     public Account getAccount(String accountBankId) {
         return allPersonsAccounts.get(getAccountActualId(accountBankId));
     }
-    
-    String getAccountActualId(String subId) {
+
+    protected String getAccountActualId(String subId) {
         return String.format("%s:%s", getPassportNumber(), subId);
     }
 }

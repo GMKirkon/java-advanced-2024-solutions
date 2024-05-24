@@ -1,5 +1,6 @@
 package info.kgeorgiy.ja.konovalov.bank.account;
 
+// :NOTE: с большой буквы
 public class tooMuchMoneyException extends RuntimeException {
     public tooMuchMoneyException(int currentvalue, int added) {
         super(String.format(

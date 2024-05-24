@@ -1,11 +1,6 @@
 package info.kgeorgiy.ja.konovalov.bank;
 
-import info.kgeorgiy.ja.konovalov.bank.account.Account;
-import info.kgeorgiy.ja.konovalov.bank.account.ILocalAccount;
-import info.kgeorgiy.ja.konovalov.bank.account.IRemoteAccount;
-import info.kgeorgiy.ja.konovalov.bank.account.InsufficientFundsException;
-import info.kgeorgiy.ja.konovalov.bank.account.LocalAccount;
-import info.kgeorgiy.ja.konovalov.bank.account.RemoteAccount;
+import info.kgeorgiy.ja.konovalov.bank.account.*;
 import info.kgeorgiy.ja.konovalov.bank.account.tooMuchMoneyException;
 import info.kgeorgiy.ja.konovalov.bank.person.ILocalPerson;
 import info.kgeorgiy.ja.konovalov.bank.person.IRemotePerson;
@@ -31,7 +26,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import java.util.TooManyListenersException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
