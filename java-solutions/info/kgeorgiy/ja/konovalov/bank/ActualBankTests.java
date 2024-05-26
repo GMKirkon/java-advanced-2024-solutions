@@ -39,7 +39,7 @@ import java.util.stream.IntStream;
 @TestMethodOrder(MethodOrderer.MethodName.class)
 public class ActualBankTests {
     
-    private static final List<Integer> SIZES = List.of(10_000, 1_000, 100, 5, 2, 1);
+    private static final List<Integer> SIZES = List.of(10_000, 1_000, 300, 100, 5, 2, 1);
     private static final int MAX_THREADS = 100;
     private static final List<String> ACCOUNT_IDS = new ArrayList<>();
     private static final List<String> NAMES = new ArrayList<>();
