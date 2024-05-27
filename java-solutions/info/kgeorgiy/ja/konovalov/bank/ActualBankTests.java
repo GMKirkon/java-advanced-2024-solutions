@@ -332,7 +332,8 @@ public class ActualBankTests {
     public void serverTest() throws MalformedURLException, NotBoundException, RemoteException {
         Server.testingMain("240", "1");
         
-        Assertions.assertThrows(RuntimeException.class, () -> Server.testingMain(null));
+        Assertions.assertThrows(RuntimeException.class, () -> Server.testingMain((String[])null));
+        Assertions.assertThrows(RuntimeException.class, () -> Server.testingMain((String)null));
         Assertions.assertThrows(RuntimeException.class, () -> Server.testingMain("-1"));
         Assertions.assertThrows(RuntimeException.class, () -> Server.testingMain("-1 2"));
         Assertions.assertThrows(RuntimeException.class, () -> Server.testingMain("3 100"));
@@ -360,7 +361,8 @@ public class ActualBankTests {
         var account = createdPerson.getAccount(accountID);
         Assertions.assertEquals(account.getAmount(), 100);
         
-        Assertions.assertThrows(RuntimeException.class, () -> Client.testingMain(null));
+        Assertions.assertThrows(RuntimeException.class, () -> Client.testingMain((String[]) null));
+        Assertions.assertThrows(RuntimeException.class, () -> Client.testingMain((String) null));
         Assertions.assertThrows(RuntimeException.class, () -> Client.testingMain("123", "-123", "kek"));
         Assertions.assertThrows(RuntimeException.class, () -> Client.testingMain("foo", "foo", "foo", "-1", "-1"));
         Assertions.assertThrows(RuntimeException.class, () -> Client.testingMain("foo", "foo", "foo", "-1", "kek"));
@@ -674,9 +676,8 @@ public class ActualBankTests {
         try {
             for (var current_size : SIZES) {
                 var account = getRandomAccount();
-                Assertions.assertEquals(account.getAmount(), 0);
                 ExecutorService exectors = Executors.newFixedThreadPool(random.nextInt(2, MAX_THREADS));
-                AtomicInteger actualResult = new AtomicInteger(0);
+                AtomicInteger actualResult = new AtomicInteger(account.getAmount());
                 IntStream.range(0, current_size).forEach(ind -> exectors.submit(() -> {
                     int value = random.nextInt(0, 100);
                     actualResult.addAndGet(value);

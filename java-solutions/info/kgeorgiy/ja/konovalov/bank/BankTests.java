@@ -7,18 +7,16 @@ import org.junit.platform.launcher.core.LauncherFactory;
 import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
+import java.io.PrintWriter;
+
 
 public class BankTests {
-    /* Working solution 1
+    /* Working solution 1, that uses Georgiy Korneev's BaseTester class
+     from java-advanced course: https://www.kgeorgiy.info/courses/java-advanced/index.html
+     
     public static void main(String... args) {
         BaseTester tester = new BaseTester();
-        tester.add("accounts", AccountTests.class);
         tester.add("bank", ActualBankTests.class);
-        tester.add("persons", PersonsTests.class);
-        
-        test(tester, "accounts", "accounts");
-        test(tester, "bank", "accounts");
-        test(tester, "persons", "accounts");
     }
     
     static void test(BaseTester tester, String... args) {
@@ -33,19 +31,22 @@ public class BankTests {
         System.exit(total);
     }
     
+    //solution base on open API from junit5
+    //https://junit.org/junit5/docs/5.0.3/api/org/junit/platform/launcher/Launcher.html
     private static int test(final Class<?> test) {
         System.err.printf("Running %s%n", test);
         
         final SummaryGeneratingListener summaryListener = new SummaryGeneratingListener();
-        final LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
-                                                                                .selectors(DiscoverySelectors.selectClass(test))
-                                                                                .build();
+        
+        //based on s7vr answer on
+        //https://stackoverflow.com/questions/41386402/discovering-tests-on-provided-classpath-via-launcherdiscoveryrequest
+        final LauncherDiscoveryRequest request =
+                LauncherDiscoveryRequestBuilder.request()
+                                               .selectors(DiscoverySelectors.selectClass(test))
+                                               .build();
         LauncherFactory.create().execute(request, summaryListener);
         final TestExecutionSummary summary = summaryListener.getSummary();
-        if (summary.getTestsFailedCount() == 0) {
-            return 0;
-        } else {
-            return 1;
-        }
+        summary.printTo(new PrintWriter(System.out));
+        return summary.getTestsFailedCount() != 0 ? 1 : 0;
     }
 }
