@@ -1,5 +1,6 @@
 package info.kgeorgiy.ja.konovalov.bank;
 
+import info.kgeorgiy.java.advanced.base.BaseTester;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
@@ -13,16 +14,16 @@ import java.io.PrintWriter;
 public class BankTests {
     /* Working solution 1, that uses Georgiy Korneev's BaseTester class
      from java-advanced course: https://www.kgeorgiy.info/courses/java-advanced/index.html
-     
     public static void main(String... args) {
         BaseTester tester = new BaseTester();
         tester.add("bank", ActualBankTests.class);
+        test(tester, "bank", "bank");
     }
     
     static void test(BaseTester tester, String... args) {
         tester.run(args);
-    }*/
-    
+    }
+    */
     
     public static void main(String... args) {
         int total = 0;
